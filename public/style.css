@@ -1,0 +1,13 @@
+.chart-container { height: 300px; }
+@media (max-width: 640px) { .chart-container { height: 200px; } }
+@keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOut { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+.alert-slide-in { animation: slideIn 0.3s forwards; }
+.alert-slide-out { animation: slideOut 0.3s forwards; }
+.password-toggle { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #6b7280; }
+.dark .password-toggle { color: #9ca3af; }
+.input-with-icon { position: relative; }
+.input-with-icon input { padding-left: 40px; }
+.input-with-icon .icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #9ca3af; }
+.loading-spinner { width: 20px; height: 20px; border: 3px solid rgba(255, 255, 255, 0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }

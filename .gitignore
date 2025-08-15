@@ -1,0 +1,5 @@
+# Pasta de dependências do Node.js
+node_modules
+
+# Ficheiro de variáveis de ambiente (contém senhas e segredos)
+.env
