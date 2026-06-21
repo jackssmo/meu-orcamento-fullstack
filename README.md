@@ -53,7 +53,7 @@ Certifique-se de que tem o [Node.js](https://nodejs.org/) e o [Git](https://git-
 
 ### 1. Clonar o Repositório
 ```bash
-git clone [https://github.com/seu-usuario/meu-orcamento-fullstack.git](https://github.com/seu-usuario/meu-orcamento-fullstack.git)
+git clone https://github.com/seuusuario/repositorio.git
 cd meu-orcamento-fullstack
 ```
 
