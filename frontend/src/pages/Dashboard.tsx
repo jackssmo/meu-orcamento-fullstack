@@ -1,17 +1,14 @@
 import { useEffect, useState, type FormEvent, type ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
+import { Header } from "../components/Header";
+import { SummaryCards } from "../components/SummaryCards";
+import { formatCurrency } from "../utils/formatters";
+import { TransactionTable } from "../components/TransactionTable";
+import type { Transaction } from "../types/Transaction";
+import { TransactionModal } from "../components/TransactionModal";
 // NOVO: Importando a biblioteca de notificações
 import toast, { Toaster } from "react-hot-toast";
-
-interface Transaction {
-  _id: string;
-  description: string;
-  amount: number;
-  type: "income" | "expense";
-  category: string;
-  date: string;
-}
 
 export function Dashboard() {
   const navigate = useNavigate();
@@ -144,11 +141,6 @@ export function Dashboard() {
     setIsModalOpen(false);
   }
 
-  function handleLogout() {
-    localStorage.removeItem("fintrack_token");
-    navigate("/login");
-  }
-
   const filteredTransactions = transactions.filter((t) => {
     const tDate = new Date(t.date);
     return (
@@ -175,43 +167,12 @@ export function Dashboard() {
       {} as Record<string, number>,
     );
 
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  const formatDate = (dateString: string) =>
-    new Date(dateString).toLocaleDateString("pt-BR", { timeZone: "UTC" });
-
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
       {/* NOVO: O componente Toaster gerencia as notificações na tela */}
       <Toaster position="bottom-right" reverseOrder={false} />
 
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center">
-            <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center mr-3 text-white font-bold">
-              MO
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-gray-900">Meu Orçamento</h1>
-              <p className="text-sm text-gray-500">
-                Bem-vindo,{" "}
-                <span className="font-medium text-indigo-600">
-                  {userName || "..."}
-                </span>
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={handleLogout}
-            className="text-red-600 hover:bg-red-50 px-4 py-2 rounded-lg font-medium transition"
-          >
-            Sair
-          </button>
-        </div>
-      </header>
+      <Header userName={userName} />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
         <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
@@ -251,113 +212,15 @@ export function Dashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Receitas</p>
-              <h3 className="text-2xl font-bold text-emerald-600">
-                {formatCurrency(income)}
-              </h3>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-xl">
-              +
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Despesas</p>
-              <h3 className="text-2xl font-bold text-red-600">
-                {formatCurrency(expense)}
-              </h3>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center text-red-600 font-bold text-xl">
-              -
-            </div>
-          </div>
-          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
-            <div>
-              <p className="text-sm font-medium text-gray-500 mb-1">Saldo</p>
-              <h3 className="text-2xl font-bold text-indigo-600">
-                {formatCurrency(balance)}
-              </h3>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 font-bold text-xl">
-              $
-            </div>
-          </div>
-        </div>
+        <SummaryCards income={income} expense={expense} balance={balance} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <section className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Transações
-              </h2>
-              <button
-                onClick={() => setIsModalOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
-              >
-                + Nova Transação
-              </button>
-            </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
-                <thead>
-                  <tr className="bg-gray-50 text-gray-500 text-sm border-b border-gray-200">
-                    <th className="p-4 font-medium">Descrição</th>
-                    <th className="p-4 font-medium">Data</th>
-                    <th className="p-4 font-medium text-right">Valor</th>
-                    <th className="p-4 font-medium text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200 text-sm">
-                  {filteredTransactions.length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="p-8 text-center text-gray-500">
-                        Nenhuma transação neste mês.
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredTransactions.map((t) => (
-                      <tr key={t._id} className="hover:bg-gray-50 transition">
-                        <td className="p-4 font-medium text-gray-900">
-                          {t.description}
-                          <span className="block text-xs text-gray-500 capitalize">
-                            {t.category}
-                          </span>
-                        </td>
-                        <td className="p-4 text-gray-500">
-                          {formatDate(t.date)}
-                        </td>
-                        <td
-                          className={`p-4 font-bold text-right ${t.type === "income" ? "text-emerald-600" : "text-red-600"}`}
-                        >
-                          {t.type === "income" ? "+" : "-"}{" "}
-                          {formatCurrency(t.amount)}
-                        </td>
-                        <td className="p-4 text-center space-x-3">
-                          <button
-                            onClick={() => handleEditClick(t)}
-                            className="text-blue-500 hover:text-blue-700 transition"
-                            title="Editar"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => handleDelete(t._id)}
-                            className="text-red-400 hover:text-red-600 transition"
-                            title="Excluir"
-                          >
-                            🗑️
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </section>
+          <TransactionTable
+            transactions={filteredTransactions}
+            onEdit={handleEditClick}
+            onDelete={handleDelete}
+            onOpenModal={() => setIsModalOpen(true)}
+          />
 
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">
@@ -398,118 +261,23 @@ export function Dashboard() {
         </div>
       </main>
 
-      {isModalOpen && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">
-                {editingId ? "Editar Transação" : "Nova Transação"}
-              </h2>
-              <button
-                onClick={closeModal}
-                className="text-gray-400 hover:text-gray-600"
-              >
-                ✖
-              </button>
-            </div>
-            <form onSubmit={handleSubmitTransaction} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Tipo
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setType("income")}
-                    className={`py-2 rounded-lg font-medium text-sm transition ${type === "income" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500" : "bg-gray-100 text-gray-500 border-2 border-transparent"}`}
-                  >
-                    Receita
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setType("expense")}
-                    className={`py-2 rounded-lg font-medium text-sm transition ${type === "expense" ? "bg-red-100 text-red-700 border-2 border-red-500" : "bg-gray-100 text-gray-500 border-2 border-transparent"}`}
-                  >
-                    Despesa
-                  </button>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Descrição
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Valor (R$)
-                  </label>
-                  {/* NOVO: Input modificado para texto para aceitar a máscara corretamente */}
-                  <input
-                    type="text"
-                    required
-                    value={amount}
-                    onChange={handleAmountChange}
-                    placeholder="0,00"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Data
-                  </label>
-                  <input
-                    type="date"
-                    required
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Categoria
-                </label>
-                <select
-                  required
-                  value={category}
-                  onChange={(e) => setCategory(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
-                >
-                  <option value="" disabled>
-                    Selecione...
-                  </option>
-                  <option value="alimentacao">Alimentação</option>
-                  <option value="moradia">Moradia</option>
-                  <option value="transporte">Transporte</option>
-                  <option value="salario">Salário</option>
-                  <option value="lazer">Lazer</option>
-                  <option value="outros">Outros</option>
-                </select>
-              </div>
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition mt-4 disabled:opacity-70"
-              >
-                {isSubmitting
-                  ? "A salvar..."
-                  : editingId
-                    ? "Atualizar Transação"
-                    : "Salvar Transação"}
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
+      <TransactionModal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        onSubmit={handleSubmitTransaction}
+        isSubmitting={isSubmitting}
+        editingId={editingId}
+        type={type}
+        setType={setType}
+        description={description}
+        setDescription={setDescription}
+        amount={amount}
+        onAmountChange={handleAmountChange}
+        date={date}
+        setDate={setDate}
+        category={category}
+        setCategory={setCategory}
+      />
     </div>
   );
 }

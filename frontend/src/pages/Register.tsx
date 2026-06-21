@@ -1,4 +1,4 @@
-import { isAxiosError } from 'axios';
+import { isAxiosError } from "axios";
 import { useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { api } from "../services/api";
@@ -39,13 +39,13 @@ export function Register() {
       // Se sucesso, redireciona o utilizador para a página de login
       navigate("/login");
     } catch (error) {
-  // Verificamos se o erro veio da nossa API (Axios)
-  if (isAxiosError(error)) {
-    setError(error.response?.data?.error || 'Ocorreu um erro.');
-  } else {
-    setError('Erro inesperado.');
-  }
-} finally {
+      // Verificamos se o erro veio da nossa API (Axios)
+      if (isAxiosError(error)) {
+        setError(error.response?.data?.error || "Ocorreu um erro.");
+      } else {
+        setError("Erro inesperado.");
+      }
+    } finally {
       setIsLoading(false);
     }
   }
