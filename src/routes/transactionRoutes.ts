@@ -1,3 +1,5 @@
+// Adicione esta linha no topo do ficheiro
+import { Transaction } from '../models/Transaction'; // ou o caminho correto para o seu modelo
 import { Router } from 'express';
 import { auth } from '../middleware/auth';
 import {
@@ -12,6 +14,15 @@ const router = Router();
 router.post('/transactions', auth, createTransaction);
 router.get('/transactions', auth, getTransactions);
 router.patch('/transactions/:id', auth, updateTransaction);
-router.delete('/transactions/:id', auth, deleteTransaction);
+// Rota para deletar uma transação
+router.delete('/transactions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    await Transaction.findByIdAndDelete(id); // Lógica do Mongoose
+    res.status(200).json({ message: 'Transação apagada com sucesso' });
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao apagar transação' });
+  }
+});
 
 export default router;
