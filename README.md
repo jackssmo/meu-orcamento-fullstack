@@ -1,199 +1,106 @@
-# 💰 Meu Orçamento Fullstack
+# 💰 Meu Orçamento (Financial Tracker)
 
-Uma aplicação web completa para gestão de orçamento pessoal, permitindo que você acompanhe suas receitas e despesas de forma simples e intuitiva.
+Um sistema completo (Full-Stack) de gestão financeira pessoal construído com foco em arquitetura escalável, segurança e usabilidade. A aplicação permite aos utilizadores registar receitas e despesas, visualizar resumos mensais e gerir o seu dinheiro de forma inteligente.
 
-## 🎯 Sobre o Projeto
+## 🚀 Tecnologias Utilizadas
 
-**Meu Orçamento** é uma aplicação fullstack moderna que ajuda você a:
-- ✅ Registrar receitas e despesas
-- ✅ Categorizar suas transações
-- ✅ Visualizar um dashboard com resumo financeiro
-- ✅ Gerenciar sua conta pessoal com autenticação segura
+O projeto foi construído utilizando uma arquitetura moderna de Monorepo, separando responsabilidades entre Frontend e Backend, ambos com tipagem estrita (TypeScript).
 
-## 🛠️ Tecnologias Utilizadas
+### Frontend (Interface Gráfica)
+* **React** (com **Vite** para compilação super rápida)
+* **TypeScript** (Tipagem forte para prevenção de bugs)
+* **Tailwind CSS** (Estilização responsiva e moderna)
+* **Axios** (Comunicação com a API com intercetores de Token JWT)
+* **React Router DOM** (Navegação SPA - Single Page Application)
+* **React Hot Toast** (Feedback visual e notificações)
 
-### Backend
-- **Node.js** com Express
-- **TypeScript** para type safety
-- **MongoDB** com Mongoose para persistência de dados
-- **JWT** para autenticação segura
-- **bcrypt** para criptografia de senhas
-- **CORS** para comunicação entre frontend e backend
-
-### Frontend
-- **React 19** com TypeScript
-- **Vite** para build rápido e HMR
-- **Tailwind CSS** para estilização
-- **React Router** para navegação
-- **Axios** para requisições HTTP
-- **React Hot Toast** para notificações
-
-## 📋 Requisitos
-
-Antes de começar, certifique-se de ter instalado:
-- **Node.js** (v16 ou superior)
-- **npm** ou **yarn**
-- **MongoDB** (local ou Atlas)
-
-## 🚀 Instalação
-
-### 1. Clone o repositório
-
-```bash
-git clone <seu-repositorio>
-cd meu-orcamento-fullstack
-```
-
-### 2. Instale as dependências do Backend
-
-```bash
-cd backend
-npm install
-```
-
-### 3. Instale as dependências do Frontend
-
-```bash
-cd ../frontend
-npm install
-```
-
-## ⚙️ Configuração
-
-### Backend (.env)
-
-Crie um arquivo `.env` na pasta `backend` com as seguintes variáveis:
-
-```env
-# Servidor
-PORT=3000
-
-# Banco de dados
-MONGODB_URI=mongodb://localhost:27017/meu-orcamento
-# Ou use MongoDB Atlas:
-# MONGODB_URI=mongodb+srv://usuario:senha@cluster.mongodb.net/meu-orcamento
-
-# JWT
-JWT_SECRET=sua_chave_secreta_aqui
-JWT_EXPIRE=7d
-
-# Node
-NODE_ENV=development
-```
-
-### Frontend (.env)
-
-Crie um arquivo `.env` na pasta `frontend`:
-
-```env
-VITE_API_BASE_URL=http://localhost:3000
-```
-
-## 📁 Estrutura do Projeto
-
-```
-meu-orcamento-fullstack/
-├── backend/
-│   ├── src/
-│   │   ├── config/
-│   │   │   └── db.ts              # Configuração do MongoDB
-│   │   ├── controllers/
-│   │   │   ├── authController.ts  # Lógica de autenticação
-│   │   │   └── transactionController.ts  # Lógica de transações
-│   │   ├── middleware/
-│   │   │   └── auth.ts            # Middleware de autenticação
-│   │   ├── models/
-│   │   │   ├── User.ts            # Modelo de usuário
-│   │   │   └── Transaction.ts     # Modelo de transação
-│   │   ├── routes/
-│   │   │   ├── authRoutes.ts      # Rotas de autenticação
-│   │   │   └── transactionRoutes.ts  # Rotas de transações
-│   │   └── server.ts              # Ponto de entrada
-│   ├── package.json
-│   └── tsconfig.json
-├── frontend/
-│   ├── src/
-│   │   ├── pages/
-│   │   │   ├── Login.tsx          # Página de login
-│   │   │   ├── Register.tsx       # Página de registro
-│   │   │   └── Dashboard.tsx      # Dashboard principal
-│   │   ├── services/
-│   │   │   └── api.ts             # Configuração do Axios
-│   │   ├── App.tsx                # Componente raiz
-│   │   ├── main.tsx               # Entry point
-│   │   └── index.css              # Estilos globais
-│   ├── public/
-│   ├── package.json
-│   ├── vite.config.ts
-│   └── tsconfig.json
-└── README.md
-```
-
-## 🎮 Rodando a Aplicação
-
-### Terminal 1 - Backend
-
-```bash
-cd backend
-npm run dev
-```
-
-O servidor estará disponível em `http://localhost:3000`
-
-### Terminal 2 - Frontend
-
-```bash
-cd frontend
-npm run dev
-```
-
-A aplicação estará disponível em `http://localhost:5173`
-
-## 📚 Endpoints da API
-
-### Autenticação
-- `POST /api/auth/register` - Registrar novo usuário
-- `POST /api/auth/login` - Fazer login
-
-### Transações
-- `GET /api/transactions` - Listar transações do usuário autenticado
-- `POST /api/transactions` - Criar nova transação
-- `PUT /api/transactions/:id` - Atualizar transação
-- `DELETE /api/transactions/:id` - Deletar transação
-
-## 🔐 Fluxo de Autenticação
-
-1. Usuário se registra com email e senha
-2. Senha é criptografada com bcrypt
-3. Após login, um token JWT é gerado
-4. Token é armazenado no cliente e enviado em cada requisição
-5. Middleware valida o token antes de acessar rotas protegidas
-
-## 🏗️ Como Contribuir
-
-1. Faça um fork do projeto
-2. Crie uma branch para sua feature (`git checkout -b feature/nova-feature`)
-3. Commit suas mudanças (`git commit -m 'Add nova feature'`)
-4. Push para a branch (`git push origin feature/nova-feature`)
-5. Abra um Pull Request
-
-## 📝 Melhorias Futuras
-
-- [ ] Adicionar gráficos e relatórios financeiros
-- [ ] Implementar filtros por data e categoria
-- [ ] Adicionar exportação de dados (CSV/PDF)
-- [ ] Integração com plataformas de pagamento
-- [ ] Aplicativo mobile com React Native
-- [ ] Testes automatizados (Jest, Vitest)
-
-## 📄 Licença
-
-Este projeto está sob a licença ISC.
-
-## 👤 Autor
-
-Desenvolvido com ❤️
+### Backend (API e Servidor)
+* **Node.js** com **Express**
+* **TypeScript** (Interfaces e tipagem de Payloads)
+* **MongoDB Atlas** (Base de dados NoSQL na nuvem)
+* **Mongoose** (ODM para modelagem de dados)
+* **JWT (JSON Web Tokens)** (Autenticação *stateless* e segura)
+* **Bcrypt** (Criptografia de palavras-passe)
 
 ---
 
-**Dúvidas?** Abra uma issue ou entre em contato!
+## 🌟 Funcionalidades
+
+* **Autenticação Segura:** Registo e Login de utilizadores com encriptação de senhas e proteção de rotas com JWT.
+* **Dashboard Interativo:** Resumo financeiro dinâmico com cálculo automático de Receitas, Despesas e Saldo atual.
+* **Gestão de Transações (CRUD):** Criação, leitura, edição e eliminação de transações financeiras.
+* **Filtros Avançados:** Filtragem de transações por Mês e Ano.
+* **Análise Visual:** Barra de progresso visual mostrando as despesas divididas por categorias (Alimentação, Moradia, etc.).
+* **Design Responsivo:** Interface "Mobile-First" que se adapta perfeitamente a smartphones, tablets e desktops.
+
+---
+
+## 🧠 Arquitetura e Boas Práticas (Padrão Ouro)
+
+Este projeto foi desenvolvido seguindo as melhores práticas da indústria de software:
+
+1. **Design Pattern MVC & SOLID (Backend):** Separação clara entre `Models` (Dados), `Controllers` (Lógica de Negócio) e `Routes` (Roteamento). Middlewares isolados para validação de Autenticação.
+2. **Componentização Inteligente (Frontend):** O React foi estruturado utilizando o padrão de *Smart* e *Dumb Components*. A página principal foi fatiada em componentes menores e reutilizáveis (`Header`, `SummaryCards`, `TransactionTable`, `TransactionModal`), garantindo o Princípio da Responsabilidade Única.
+3. **Segurança Avançada:** Validação de duplicidade de e-mails, proteção contra CORS e endpoints (rotas) protegidos contra acesso não autorizado.
+4. **Variáveis de Ambiente Dinâmicas:** Separação de credenciais, chaves secretas e URLs utilizando ficheiros `.env` isolados em ambos os ambientes, garantindo a segurança dos dados em produção.
+
+---
+
+## ⚙️ Como Executar o Projeto Localmente
+
+### Pré-requisitos
+Certifique-se de que tem o [Node.js](https://nodejs.org/) e o [Git](https://git-scm.com/) instalados na sua máquina. Precisará também de uma ligação válida ao MongoDB (Atlas na nuvem ou localmente).
+
+### 1. Clonar o Repositório
+```bash
+git clone [https://github.com/seu-usuario/meu-orcamento-fullstack.git](https://github.com/seu-usuario/meu-orcamento-fullstack.git)
+cd meu-orcamento-fullstack
+```
+
+### 2. Configurar e Executar o Backend
+Abra um terminal e aceda à pasta do backend:
+```bash
+cd backend
+npm install
+```
+
+Crie um ficheiro `.env` na raiz da pasta `backend/` com as seguintes variáveis:
+```env
+PORT=3000
+MONGO_URI=sua_string_de_conexao_do_mongodb_aqui
+JWT_SECRET=sua_chave_secreta_jwt_aqui
+```
+
+Inicie o servidor de desenvolvimento:
+```bash
+npm run dev
+```
+O backend estará a rodar em `http://localhost:3000`
+
+### 3. Configurar e Executar o Frontend
+Abra **outro** terminal e aceda à pasta do frontend:
+```bash
+cd frontend
+npm install
+```
+
+Crie um ficheiro `.env` na raiz da pasta `frontend/` com o endereço onde a API está a correr:
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+Inicie a aplicação React:
+```bash
+npm run dev
+```
+
+Abra o seu navegador no link fornecido pelo Vite (geralmente `http://localhost:5173`) para aceder ao sistema!
+
+---
+
+## 👨‍💻 Autor
+
+**Jackson**
+*Desenvolvedor Full-Stack*
+
+Projeto pessoal desenvolvido com foco em qualidade de código, arquitetura escalável e experiência do utilizador.
