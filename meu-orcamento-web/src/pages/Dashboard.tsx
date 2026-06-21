@@ -1,6 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+// NOVO: Importando a biblioteca de notificações
+import toast, { Toaster } from 'react-hot-toast';
 
 interface Transaction {
   _id: string;
@@ -15,8 +17,8 @@ export function Dashboard() {
   const navigate = useNavigate();
   const [userName, setUserName] = useState('');
   const [transactions, setTransactions] = useState<Transaction[]>([]);
- 
-  // Estados do Modal
+
+  // Estados do Modal e Formulário
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
@@ -24,8 +26,9 @@ export function Dashboard() {
   const [category, setCategory] = useState('');
   const [date, setDate] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
-  // Estados para os Filtros de Mês e Ano (Começa no mês/ano atual)
+  // Estados para os Filtros
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
@@ -51,21 +54,87 @@ export function Dashboard() {
       const response = await api.get('/transactions');
       setTransactions(response.data);
     } catch (error) {
-      console.error('Erro ao buscar transações:', error);
+      toast.error('Erro ao buscar transações.');
     }
   }
 
-  // Função para Eliminar Transação
   async function handleDelete(id: string) {
     if (!window.confirm('Tem certeza que deseja apagar esta transação?')) return;
-    
     try {
       await api.delete(`/transactions/${id}`);
       setTransactions(transactions.filter(t => t._id !== id));
+      toast.success('Transação apagada com sucesso!'); // NOVO: Toast de Sucesso
     } catch (error) {
-      console.error('Erro ao deletar:', error);
-      alert('Erro ao apagar a transação. Verifique o console.');
+      toast.error('Erro ao apagar a transação.'); // NOVO: Toast de Erro
     }
+  }
+
+  function handleEditClick(transaction: Transaction) {
+    setDescription(transaction.description);
+    
+    // NOVO: Formata o número que vem do banco (ex: 1500.5) para a máscara (1.500,50)
+    const formattedAmount = transaction.amount
+      .toFixed(2)
+      .replace('.', ',')
+      .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    setAmount(formattedAmount);
+    
+    setType(transaction.type);
+    setCategory(transaction.category);
+    setDate(transaction.date.substring(0, 10)); 
+    setEditingId(transaction._id);
+    setIsModalOpen(true);
+  }
+
+  // NOVO: Função para formatar o valor como Real enquanto o usuário digita
+  function handleAmountChange(e: ChangeEvent<HTMLInputElement>) {
+    let value = e.target.value.replace(/\D/g, ''); // Remove tudo que não for número
+    if (value === '') {
+      setAmount('');
+      return;
+    }
+    // Converte para decimal e adiciona pontos e vírgulas
+    const numericValue = (Number(value) / 100).toFixed(2);
+    const formattedValue = numericValue
+      .replace('.', ',')
+      .replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.');
+    
+    setAmount(formattedValue);
+  }
+
+  async function handleSubmitTransaction(e: FormEvent) {
+    e.preventDefault();
+    setIsSubmitting(true);
+    try {
+      // NOVO: Converte a string "1.500,50" de volta para o número 1500.50 pro banco de dados
+      const numericAmount = Number(amount.replace(/\./g, '').replace(',', '.'));
+      const data = { description, amount: numericAmount, type, category, date };
+
+      if (editingId) {
+        await api.put(`/transactions/${editingId}`, data);
+        toast.success('Transação atualizada com sucesso!');
+      } else {
+        await api.post('/transactions', data);
+        toast.success('Nova transação salva!');
+      }
+
+      closeModal();
+      await fetchTransactions(); 
+    } catch (error) {
+      toast.error('Erro ao salvar transação.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  function closeModal() {
+    setDescription('');
+    setAmount('');
+    setType('expense');
+    setCategory('');
+    setDate('');
+    setEditingId(null);
+    setIsModalOpen(false);
   }
 
   function handleLogout() {
@@ -73,24 +142,6 @@ export function Dashboard() {
     navigate('/login');
   }
 
-  async function handleCreateTransaction(e: FormEvent) {
-    e.preventDefault();
-    setIsSubmitting(true);
-    try {
-      await api.post('/transactions', {
-        description, amount: Number(amount), type, category, date
-      });
-      setDescription(''); setAmount(''); setType('expense'); setCategory(''); setDate('');
-      setIsModalOpen(false);
-      await fetchTransactions();
-    } catch (error) {
-      alert('Erro ao salvar transação.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  }
-
-  // Filtrar transações com base no Mês e Ano selecionados
   const filteredTransactions = transactions.filter(t => {
     const tDate = new Date(t.date);
     return (tDate.getUTCMonth() + 1) === selectedMonth && tDate.getUTCFullYear() === selectedYear;
@@ -100,7 +151,6 @@ export function Dashboard() {
   const expense = filteredTransactions.filter(t => t.type === 'expense').reduce((acc, t) => acc + t.amount, 0);
   const balance = income - expense;
 
-  // Agrupar as despesas por categoria para o gráfico
   const expensesByCategory = filteredTransactions
     .filter(t => t.type === 'expense')
     .reduce((acc, t) => {
@@ -113,6 +163,9 @@ export function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-12">
+      {/* NOVO: O componente Toaster gerencia as notificações na tela */}
+      <Toaster position="bottom-right" reverseOrder={false} />
+
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
           <div className="flex items-center">
@@ -128,15 +181,10 @@ export function Dashboard() {
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8 space-y-8">
         
-        {/* Barra de Filtros (Mês e Ano) */}
         <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-gray-100">
           <h2 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">Resumo Financeiro</h2>
           <div className="flex space-x-2">
-            <select 
-              value={selectedMonth} 
-              onChange={e => setSelectedMonth(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-            >
+            <select value={selectedMonth} onChange={e => setSelectedMonth(Number(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
               <option value={1}>Janeiro</option>
               <option value={2}>Fevereiro</option>
               <option value={3}>Março</option>
@@ -150,11 +198,7 @@ export function Dashboard() {
               <option value={11}>Novembro</option>
               <option value={12}>Dezembro</option>
             </select>
-            <select 
-              value={selectedYear} 
-              onChange={e => setSelectedYear(Number(e.target.value))}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm"
-            >
+            <select value={selectedYear} onChange={e => setSelectedYear(Number(e.target.value))} className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 text-sm">
               {[2024, 2025, 2026, 2027].map(year => (
                 <option key={year} value={year}>{year}</option>
               ))}
@@ -162,7 +206,6 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* Cartões de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 flex justify-between items-center">
             <div>
@@ -188,8 +231,6 @@ export function Dashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          
-          {/* Tabela de Transações */}
           <section className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h2 className="text-lg font-semibold text-gray-900">Transações</h2>
@@ -221,7 +262,10 @@ export function Dashboard() {
                         <td className={`p-4 font-bold text-right ${t.type === 'income' ? 'text-emerald-600' : 'text-red-600'}`}>
                           {t.type === 'income' ? '+' : '-'} {formatCurrency(t.amount)}
                         </td>
-                        <td className="p-4 text-center">
+                        <td className="p-4 text-center space-x-3">
+                          <button onClick={() => handleEditClick(t)} className="text-blue-500 hover:text-blue-700 transition" title="Editar">
+                            ✏️
+                          </button>
                           <button onClick={() => handleDelete(t._id)} className="text-red-400 hover:text-red-600 transition" title="Excluir">
                             🗑️
                           </button>
@@ -234,10 +278,8 @@ export function Dashboard() {
             </div>
           </section>
 
-          {/* Gráficos de Gastos por Categoria */}
           <section className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-6">Gastos por Categoria</h2>
-            
             {expense === 0 ? (
               <p className="text-sm text-center text-gray-500">Sem despesas neste mês.</p>
             ) : (
@@ -261,19 +303,19 @@ export function Dashboard() {
               </div>
             )}
           </section>
-
         </div>
       </main>
 
-      {/* Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
           <div className="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold text-gray-800">Nova Transação</h2>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600">✖</button>
+              <h2 className="text-xl font-bold text-gray-800">
+                {editingId ? 'Editar Transação' : 'Nova Transação'}
+              </h2>
+              <button onClick={closeModal} className="text-gray-400 hover:text-gray-600">✖</button>
             </div>
-            <form onSubmit={handleCreateTransaction} className="space-y-4">
+            <form onSubmit={handleSubmitTransaction} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -288,7 +330,15 @@ export function Dashboard() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
-                  <input type="number" required step="0.01" min="0.01" value={amount} onChange={e => setAmount(e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" />
+                  {/* NOVO: Input modificado para texto para aceitar a máscara corretamente */}
+                  <input 
+                    type="text" 
+                    required 
+                    value={amount} 
+                    onChange={handleAmountChange} 
+                    placeholder="0,00"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500" 
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
@@ -308,7 +358,7 @@ export function Dashboard() {
                 </select>
               </div>
               <button type="submit" disabled={isSubmitting} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition mt-4 disabled:opacity-70">
-                {isSubmitting ? 'A salvar...' : 'Salvar Transação'}
+                {isSubmitting ? 'A salvar...' : (editingId ? 'Atualizar Transação' : 'Salvar Transação')}
               </button>
             </form>
           </div>

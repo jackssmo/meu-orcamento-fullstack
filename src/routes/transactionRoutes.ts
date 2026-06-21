@@ -24,5 +24,21 @@ router.delete('/transactions/:id', async (req, res) => {
     res.status(500).json({ error: 'Erro ao apagar transação' });
   }
 });
+router.put('/transactions/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { description, amount, type, category, date } = req.body;
+    
+    // Atualiza o documento no MongoDB e devolve o novo documento atualizado
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      id,
+      { description, amount, type, category, date },
+      { new: true }
+    );
 
+    res.status(200).json(updatedTransaction);
+  } catch (error) {
+    res.status(500).json({ error: 'Erro ao atualizar transação' });
+  }
+});
 export default router;
