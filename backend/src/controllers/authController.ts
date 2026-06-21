@@ -4,18 +4,23 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/User';
 import { AuthRequest } from '../middleware/auth';
 
-export const signup = async (req: Request, res: Response): Promise<void> => {
+export const signup = async (req: Request, res: Response) => {
   try {
     const { name, email, password } = req.body;
-    
+
+    // CORREÇÃO: Validação antecipada - Verifica se o e-mail já existe
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ error: 'Este e-mail já está em uso.' });
+    }
+
     const hashedPassword = await bcrypt.hash(password, 10);
     const newUser = new User({ name, email, password: hashedPassword });
-    
     await newUser.save();
-    res.status(201).send('Usuário criado com sucesso!');
+
+    res.status(201).json({ message: 'Usuário criado com sucesso!' });
   } catch (error) {
-    console.error('Erro ao criar usuário:', error);
-    res.status(500).send('Erro ao criar usuário. O e-mail pode já estar em uso.');
+    res.status(500).json({ error: 'Erro ao criar usuário' });
   }
 };
 
