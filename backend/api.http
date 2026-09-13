@@ -1,0 +1,56 @@
+### Teste de Vida
+GET http://localhost:3333/
+
+###
+
+### 1. Criar um novo usuário (Cadastro)
+POST http://localhost:3333/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "jackson@email.com",
+  "password": "minhasenha123"
+}
+
+###
+
+### 2. Tentar criar o mesmo usuário (Deve dar erro 400)
+POST http://localhost:3333/api/auth/register
+Content-Type: application/json
+
+{
+  "email": "jackson@email.com",
+  "password": "outrasenha456"
+}
+
+###
+
+### 3. Fazer Login com sucesso
+POST http://localhost:3333/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jackson@email.com",
+  "password": "minhasenha123"
+}
+
+###
+
+### 4. Fazer Login com senha errada (Deve dar erro 401)
+POST http://localhost:3333/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "jackson@email.com",
+  "password": "senhaerrada"
+}
+
+### 5. Tentar entrar na área VIP SEM o crachá (Deve dar erro 401)
+GET http://localhost:3333/api/auth/perfil
+
+###
+
+### 6. Tentar entrar na área VIP COM o crachá
+# ATENÇÃO: Cole o seu token gigantesco no lugar de "SEU_TOKEN_AQUI"
+GET http://localhost:3333/api/auth/perfil
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTI2MDI0MywiZXhwIjoxNzg5MjYzODQzfQ.d9_oaxcB26_Iw6ocT6btEfG9kcQYN-3TjKGYjrLJ2SQ

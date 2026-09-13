@@ -1,14 +1,23 @@
-import mongoose from 'mongoose';
+import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 dotenv.config(); 
 
-export const connectDB = async () => {
-  try {
-    const conn = await mongoose.connect(process.env.MONGODB_URI as string);
-    console.log(`Conectado ao MongoDB Atlas com sucesso!`);
-  } catch (error) {
-    console.error('Erro ao conectar ao MongoDB:', error);
-    process.exit(1);
-  }
-};
+ const pool = mysql.createPool({
+      host: process.env.DB_HOST!,
+      user: process.env.DB_USER!,
+      password: process.env.DB_PASSWORD!,
+      database: process.env.DB_NAME!,
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0,
+    });
+
+pool.getConnection().then((connection) => {
+  console.log('Conexão com o MySQL estabelecida com sucesso!');
+  connection.release();
+}).catch((error) => {
+  console.error('Erro ao conectar ao MySQL:', error);
+});
+
+export default pool;

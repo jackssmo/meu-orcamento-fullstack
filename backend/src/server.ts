@@ -1,9 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB } from './config/db';
-import authRoutes from './routes/authRoutes';
-import transactionRoutes from './routes/transactionRoutes';
+import './config/db';
+import authRoutes from './routes/auth.routes';
 
 dotenv.config();
 
@@ -13,13 +12,10 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-connectDB();
+app.use('/api/auth', authRoutes);
 
-app.use('/', authRoutes);
-app.use('/', transactionRoutes);
-
-app.get('/api/status', (req, res) => {
-  res.json({ message: 'API a funcionar em TypeScript e muito mais segura!' });
+app.get('/', (req, res) => {
+  res.json({ message: 'API do Meu Orcamento funcionando!' });
 });
 
 app.listen(port, () => {

@@ -1,15 +1,6 @@
-import mongoose, { Document } from 'mongoose';
-
-export interface IUser extends Document {
-  name: string;
+export interface User {
+  id?: number; // Opcional com '?' porque o banco gera automaticamente
   email: string;
-  password: string;
+  password_hash: string;
+  created_at?: Date;
 }
-
-const userSchema = new mongoose.Schema({
-  name: { type: String, required: true },
-  email: { type: String, required: true, unique: true },
-  password: { type: String, required: true }
-});
-
-export const User = mongoose.model<IUser>('User', userSchema);
