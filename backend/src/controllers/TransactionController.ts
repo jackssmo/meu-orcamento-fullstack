@@ -74,4 +74,21 @@ export class TransactionController {
       return res.status(400).json({ error: error.message });
     }
   }
+
+  async getSummary(req: AuthRequest, res: Response): Promise<Response> {
+    try {
+      const userId = req.user?.id;
+
+      if (!userId) {
+        return res.status(401).json({ error: 'Usuário não autenticado.' });
+      }
+
+      const summary = await transactionService.getTransactionSummary(userId);
+
+      return res.status(200).json(summary);
+
+    } catch (error: any) {
+      return res.status(400).json({ error: error.message });
+    }
+  }
 }

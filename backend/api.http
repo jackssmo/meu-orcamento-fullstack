@@ -111,3 +111,7 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiO
 # Troque a barra final pelo ID real da transação que deseja apagar
 DELETE http://localhost:3333/api/transactions/1
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY
+
+### 12. Obter Resumo Financeiro (Dashboard)
+GET http://localhost:3333/api/transactions/summary
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY

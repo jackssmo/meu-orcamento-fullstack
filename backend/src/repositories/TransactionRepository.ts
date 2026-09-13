@@ -65,4 +65,28 @@ export class TransactionRepository {
     const query = 'DELETE FROM transactions WHERE id = ?';
     await db.execute(query, [id]);
   }
+
+  async getSummary(userId: number): Promise<{ totalIncome: number; totalExpense: number; balance: number }> {
+    const query = `
+      SELECT 
+        COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS totalIncome,
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS totalExpense
+      FROM transactions 
+      WHERE user_id = ?
+    `;
+
+    const [rows] = await db.execute<RowDataPacket[]>(query, [userId]);
+    const row = rows[0];
+
+    // Convertemos para Number pois o driver do MySQL pode retornar campos DECIMAL como string
+    const totalIncome = Number(row?.totalIncome) || 0;
+    const totalExpense = Number(row?.totalExpense) || 0;
+    const balance = totalIncome - totalExpense;
+
+    return {
+      totalIncome,
+      totalExpense,
+      balance
+    };
+  }
 }

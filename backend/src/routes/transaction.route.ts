@@ -11,5 +11,6 @@ router.post('/', (req, res) => transactionController.create(req, res));
 router.get('/', (req, res) => transactionController.list(req, res));
 router.put('/:id', (req, res) => transactionController.update(req, res));
 router.delete('/:id', (req, res) => transactionController.delete(req, res));
+router.get('/summary', (req, res) => transactionController.getSummary(req, res));
 
 export default router;

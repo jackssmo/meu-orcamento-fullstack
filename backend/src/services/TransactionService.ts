@@ -87,6 +87,9 @@ export class TransactionService {
 
         await this.transactionRepository.delete(id);
     }
+    async getTransactionSummary(userId: number) {
+    return await this.transactionRepository.getSummary(userId);
+  }
 
     async getTransactionsByUserId(userId: number): Promise<Transaction[]> {
         return await this.transactionRepository.findByUserId(userId);
