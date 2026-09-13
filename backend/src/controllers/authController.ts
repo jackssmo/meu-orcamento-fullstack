@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { UserRepository } from '../repositories/UserRepository';
 import { UserService } from '../services/UserService';
+import { env } from '../config/env';
 import jwt from 'jsonwebtoken';
 
 const userRepository = new UserRepository();
@@ -39,8 +40,7 @@ export class AuthController {
       const { password_hash, ...userWithoutPassword } = user;
 
       const payload = { id: user.id, email: user.email };
-      const secret = process.env.JWT_SECRET as string;
-      const token = jwt.sign(payload, secret, { expiresIn: '1h' });
+      const token = jwt.sign(payload, env.jwtSecret, { expiresIn: '1h' });
       
       return res.status(200).json({ 
         message: 'Login bem-sucedido!', 

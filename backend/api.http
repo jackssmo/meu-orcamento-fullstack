@@ -1,10 +1,10 @@
 ### Teste de Vida
-GET http://localhost:3333/
+GET http://localhost:3000/
 
 ###
 
 ### 1. Criar um novo usuário (Cadastro)
-POST http://localhost:3333/api/auth/register
+POST http://localhost:3000/api/auth/register
 Content-Type: application/json
 
 {
@@ -15,7 +15,7 @@ Content-Type: application/json
 ###
 
 ### 2. Tentar criar o mesmo usuário (Deve dar erro 400)
-POST http://localhost:3333/api/auth/register
+POST http://localhost:3000/api/auth/register
 Content-Type: application/json
 
 {
@@ -26,7 +26,7 @@ Content-Type: application/json
 ###
 
 ### 3. Fazer Login com sucesso
-POST http://localhost:3333/api/auth/login
+POST http://localhost:3000/api/auth/login
 Content-Type: application/json
 
 {

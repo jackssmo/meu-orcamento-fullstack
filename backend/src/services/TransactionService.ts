@@ -12,7 +12,7 @@ export class TransactionService {
             throw new Error("A descrição da transação deve ter pelo menos 2 caracteres.");
         };
 
-        if (!amount || amount <= 0) {
+        if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
             throw new Error("O valor da transação deve ser maior que zero.");
         }
 
@@ -59,9 +59,25 @@ export class TransactionService {
         if (!data.description || data.description.trim().length < 2) {
             throw new Error('A descrição deve ter pelo menos 2 caracteres.');
         }
-        if (!data.amount || data.amount <= 0) {
+        if (
+    typeof data.amount !== 'number' ||
+    !Number.isFinite(data.amount) ||
+    data.amount <= 0
+) {
             throw new Error('O valor da transação deve ser maior que zero.');
         }
+
+        if (data.type !== 'income' && data.type !== 'expense') {
+    throw new Error("O tipo da transação deve ser 'income' ou 'expense'.");
+}
+
+if (!data.category || data.category.trim() === '') {
+    throw new Error('A categoria da transação é obrigatória.');
+}
+
+if (!data.date) {
+    throw new Error('A data da transação é obrigatória.');
+}
 
         const updatedTransaction: Transaction = {
             id,
