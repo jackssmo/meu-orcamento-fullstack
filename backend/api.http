@@ -53,4 +53,61 @@ GET http://localhost:3333/api/auth/perfil
 ### 6. Tentar entrar na área VIP COM o crachá
 # ATENÇÃO: Cole o seu token gigantesco no lugar de "SEU_TOKEN_AQUI"
 GET http://localhost:3333/api/auth/perfil
-Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTI2MDI0MywiZXhwIjoxNzg5MjYzODQzfQ.d9_oaxcB26_Iw6ocT6btEfG9kcQYN-3TjKGYjrLJ2SQ
+Authorization: Bearer 
+
+### 7. Criar uma Nova Transação (Receita)
+POST http://localhost:3333/api/transactions
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY
+
+{
+  "description": "Salário do Mês",
+  "amount": 4500.00,
+  "type": "income",
+  "category": "Salário",
+  "date": "2026-09-13"
+}
+
+###
+
+### 8. Tentar Criar Despesa Negativa (O Service deve barrar!)
+POST http://localhost:3333/api/transactions
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY
+
+{
+  "description": "Conta de Luz",
+  "amount": -150.00,
+  "type": "expense",
+  "category": "Moradia",
+  "date": "2026-09-15"
+}
+
+###
+
+### 9. Listar minhas transações
+GET http://localhost:3333/api/transactions
+
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY
+
+### 10. Editar uma Transação Existente
+# Troque a barra final pelo ID real da sua transação (ex: /api/transactions/1)
+PUT http://localhost:3333/api/transactions/1
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY
+
+
+{
+  "description": "Salário do Mês (Com Bônus)",
+  "amount": 5000.00,
+  "type": "income",
+  "category": "Salário",
+  "date": "2026-09-13"
+}
+
+###
+
+### 11. Deletar uma Transação
+# Troque a barra final pelo ID real da transação que deseja apagar
+DELETE http://localhost:3333/api/transactions/1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJqYWNrc29uQGVtYWlsLmNvbSIsImlhdCI6MTc4OTMxMzc3NywiZXhwIjoxNzg5MzE3Mzc3fQ.Dp9cAj30Gu1oRPcA87n1DpdzDq9BPEpSz3wVXxOApvY

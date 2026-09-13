@@ -1,11 +1,10 @@
 export interface Transaction {
-  id?: number;
-  user_id: number;
-  type: 'INCOME' | 'EXPENSE';
-  amount: number;
-  date: Date | string;
-  category: string;
-  is_fixed?: boolean;
-  installments?: number;
+  id?: number; 
+  user_id: number; 
+  description: string;
+  amount: number; 
+  type: 'income' | 'expense';
+  category: string; 
+  date: string | Date; 
   created_at?: Date;
 }
