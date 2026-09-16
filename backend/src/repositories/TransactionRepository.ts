@@ -3,24 +3,22 @@ import { Transaction } from '../models/Transaction';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class TransactionRepository {
-  
   async create(transaction: Transaction): Promise<Transaction> {
     const query = `
-      INSERT INTO transactions (user_id, description, amount, type, category, date)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO transactions (user_id, description, amount, type, category, date, is_fixed, installments)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    
     const values = [
       transaction.user_id,
       transaction.description,
       transaction.amount,
       transaction.type,
       transaction.category,
-      transaction.date
+      transaction.date,
+      transaction.is_fixed || false,
+      transaction.installments || 1
     ];
-
     const [result] = await db.execute<ResultSetHeader>(query, values);
-
     return {
       id: result.insertId,
       ...transaction
@@ -46,7 +44,7 @@ export class TransactionRepository {
   async update(id: number, transaction: Transaction): Promise<void> {
     const query = `
       UPDATE transactions 
-      SET description = ?, amount = ?, type = ?, category = ?, date = ?
+      SET description = ?, amount = ?, type = ?, category = ?, date = ?, is_fixed = ?, installments = ?
       WHERE id = ?
     `;
     const values = [
@@ -55,9 +53,10 @@ export class TransactionRepository {
       transaction.type,
       transaction.category,
       transaction.date,
+      transaction.is_fixed || false,
+      transaction.installments || 1,
       id
     ];
-
     await db.execute(query, values);
   }
 

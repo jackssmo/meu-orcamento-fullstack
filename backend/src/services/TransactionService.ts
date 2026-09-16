@@ -5,8 +5,7 @@ export class TransactionService {
     constructor(private transactionRepository: TransactionRepository) { }
 
     async createTransaction(userId: number, data: Omit<Transaction, 'id' | 'user_id' | 'created_at'>): Promise<Transaction> {
-        const { description, amount, type, category, date } = data;
-
+        const { description, amount, type, category, date, is_fixed, installments } = data;
 
         if (!description || description.trim().length < 2) {
             throw new Error("A descrição da transação deve ter pelo menos 2 caracteres.");
@@ -28,13 +27,66 @@ export class TransactionService {
             throw new Error("A data da transação é obrigatória.");
         }
 
+       const numInstallments = installments && installments > 0 ? installments : 1;
+        const isFixed = is_fixed || false;
+
+        if (type === 'expense' && numInstallments > 1) {
+            const installmentAmount = amount / numInstallments;
+            let firstTransaction: Transaction | null = null;
+
+            for (let i = 0; i < numInstallments; i++) {
+                const transactionDate = new Date(date);
+                transactionDate.setMonth(transactionDate.getMonth() + i);
+
+                const newTransaction = {
+                    user_id: userId,
+                    description: `${description} (${i + 1}/${numInstallments})`,
+                    amount: installmentAmount,
+                    type,
+                    category,
+                    date: transactionDate,
+                    is_fixed: false,
+                    installments: numInstallments
+                };
+                const created = await this.transactionRepository.create(newTransaction);
+                if (i === 0) firstTransaction = created;
+            }
+            return firstTransaction!; 
+        }
+
+        if (type === 'income' && isFixed) {
+            const monthsToProject = 12; 
+            let firstTransaction: Transaction | null = null;
+
+            for (let i = 0; i < monthsToProject; i++) {
+                const transactionDate = new Date(date);
+                transactionDate.setMonth(transactionDate.getMonth() + i);
+
+                const newTransaction = {
+                    user_id: userId,
+                    description,
+                    amount,
+                    type,
+                    category,
+                    date: transactionDate,
+                    is_fixed: true,
+                    installments: 1
+                };
+                const created = await this.transactionRepository.create(newTransaction);
+                if (i === 0) firstTransaction = created;
+            }
+            return firstTransaction!;
+        }
+
         const newTransaction: Transaction = {
             user_id: userId,
             description,
             amount,
             type,
             category,
-            date
+            date,
+            is_fixed: isFixed,
+            installments: numInstallments
         };
 
         return await this.transactionRepository.create(newTransaction);
