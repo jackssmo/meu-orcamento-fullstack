@@ -6,7 +6,7 @@ Este documento mapeia as entidades principais do sistema Meu Orçamento, refleti
 * Um **Usuário** pode registrar múltiplas **Transações** (1 para N).
 * A exclusão de um Usuário resulta na exclusão em cascata (Cascade) de todas as suas Transações.
 
-## Diagrama (Mermaid)
+## Diagrama de Entidade-Relacionamento (ER)
 
 ```mermaid
 erDiagram
@@ -14,7 +14,7 @@ erDiagram
     
     USERS {
         int id PK "Identificador único"
-        string email "E-mail de acesso (Único)"
+        string email "E-mail de acesso (único)"
         string password_hash "Senha criptografada"
         timestamp created_at "Data de criação"
     }
@@ -34,7 +34,7 @@ erDiagram
 
 ## Diagrama de Classes (Arquitetura do Backend)
 
-Este diagrama detalha a estrutura Orientada a Objetos do sistema, demonstrando a aplicação de princípios SOLID (como Inversão de Dependência) e o uso do padrão de projeto Strategy para regras financeiras.
+Este diagrama detalha a estrutura Orientada a Objetos do sistema, refletindo a injeção de dependências via repositórios e serviços.
 
 ```mermaid
 classDiagram
@@ -45,29 +45,23 @@ classDiagram
     }
     class TransactionController {
         +create(req, res)
-        +listByUser(req, res)
+        +list(req, res)
+        +update(req, res)
+        +delete(req, res)
+        +getSummary(req, res)
     }
 
     %% Camada de Serviços (Regras de Negócio)
     class UserService {
-        +registerUser(data) User
-        +authenticate(email, password) String
+        +registerUser(email, password_plain) User
+        +authenticate(email, password_plain) User
     }
     class TransactionService {
-        +addTransaction(data) Transaction
-        +getSummary(userId) Object
-    }
-
-    %% Padrão Strategy (Regras de Entrada/Saída)
-    class ITransactionStrategy {
-        <<interface>>
-        +process(transactionData) void
-    }
-    class IncomeStrategy {
-        +process(transactionData) void
-    }
-    class ExpenseStrategy {
-        +process(transactionData) void
+        +createTransaction(userId, data) Transaction
+        +updateTransaction(id, userId, data) Transaction
+        +deleteTransaction(id, userId) void
+        +getTransactionSummary(userId) Object
+        +getTransactionsByUserId(userId) List
     }
 
     %% Camada de Repositórios (Banco de Dados)
@@ -76,18 +70,17 @@ classDiagram
         +findByEmail(email) User
         +save(user) User
     }
-    class ITransactionRepository {
-        <<interface>>
-        +findByUserId(userId) List
-        +save(transaction) Transaction
-    }
     class UserRepository {
         +findByEmail(email) User
         +save(user) User
     }
     class TransactionRepository {
+        +create(transaction) Transaction
         +findByUserId(userId) List
-        +save(transaction) Transaction
+        +findById(id) Transaction
+        +update(id, transaction) void
+        +delete(id) void
+        +getSummary(userId) Object
     }
 
     %% Relacionamentos e Fluxos
@@ -95,11 +88,7 @@ classDiagram
     TransactionController --> TransactionService : chama
     
     UserService --> IUserRepository : depende de
-    TransactionService --> ITransactionRepository : depende de
-    TransactionService --> ITransactionStrategy : utiliza
-    
-    ITransactionStrategy <|.. IncomeStrategy : implementa
-    ITransactionStrategy <|.. ExpenseStrategy : implementa
+    TransactionService --> TransactionRepository : depende de
     
     IUserRepository <|.. UserRepository : implementa
-    ITransactionRepository <|.. TransactionRepository : implementa
+```
