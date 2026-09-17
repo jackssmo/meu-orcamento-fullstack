@@ -1,5 +1,3 @@
-// frontend/src/utils/formatters.ts
-
 export const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("pt-BR", {
     style: "currency",
@@ -8,5 +6,8 @@ export const formatCurrency = (value: number) => {
 };
 
 export const formatDate = (dateString: string) => {
-  return new Date(dateString).toLocaleDateString("pt-BR", { timeZone: "UTC" });
+  const date = new Date(dateString);
+  return new Intl.DateTimeFormat("pt-BR", {
+    timeZone: "UTC",
+  }).format(date);
 };

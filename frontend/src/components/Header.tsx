@@ -1,4 +1,3 @@
-// frontend/src/components/Header.tsx
 import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
@@ -23,10 +22,7 @@ export function Header({ userName }: HeaderProps) {
           <div>
             <h1 className="text-xl font-bold text-gray-900">Meu Orçamento</h1>
             <p className="text-sm text-gray-500">
-              Bem-vindo,{" "}
-              <span className="font-medium text-indigo-600">
-                {userName || "..."}
-              </span>
+              Bem-vindo, <span className="font-medium text-indigo-600">{userName || "Carregando..."}</span>
             </p>
           </div>
         </div>

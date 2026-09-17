@@ -1,4 +1,3 @@
-// frontend/src/components/TransactionModal.tsx
 import type { ChangeEvent, FormEvent } from "react";
 
 interface TransactionModalProps {
@@ -6,9 +5,7 @@ interface TransactionModalProps {
   onClose: () => void;
   onSubmit: (e: FormEvent) => void;
   isSubmitting: boolean;
-  editingId: string | null;
-
-  // Campos do Formulário
+  editingId: number | null;
   type: "income" | "expense";
   setType: (type: "income" | "expense") => void;
   description: string;
@@ -19,6 +16,11 @@ interface TransactionModalProps {
   setDate: (date: string) => void;
   category: string;
   setCategory: (cat: string) => void;
+  // Novos campos que criamos no backend:
+  isFixed: boolean;
+  setIsFixed: (value: boolean) => void;
+  installments: string;
+  setInstallments: (value: string) => void;
 }
 
 export function TransactionModal({
@@ -37,8 +39,11 @@ export function TransactionModal({
   setDate,
   category,
   setCategory,
+  isFixed,
+  setIsFixed,
+  installments,
+  setInstallments,
 }: TransactionModalProps) {
-  // Se o modal estiver fechado, não desenha nada no ecrã
   if (!isOpen) return null;
 
   return (
@@ -48,55 +53,58 @@ export function TransactionModal({
           <h2 className="text-xl font-bold text-gray-800">
             {editingId ? "Editar Transação" : "Nova Transação"}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600"
-          >
-            ✖
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 font-bold">
+            ✕
           </button>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
+          {/* Tipo (Receita / Despesa) */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tipo
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
             <div className="grid grid-cols-2 gap-2">
               <button
                 type="button"
                 onClick={() => setType("income")}
-                className={`py-2 rounded-lg font-medium text-sm transition ${type === "income" ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500" : "bg-gray-100 text-gray-500 border-2 border-transparent"}`}
+                className={`py-2 rounded-lg font-medium text-sm transition ${
+                  type === "income"
+                    ? "bg-emerald-100 text-emerald-700 border-2 border-emerald-500"
+                    : "bg-gray-100 text-gray-500 border-2 border-transparent"
+                }`}
               >
                 Receita
               </button>
               <button
                 type="button"
                 onClick={() => setType("expense")}
-                className={`py-2 rounded-lg font-medium text-sm transition ${type === "expense" ? "bg-red-100 text-red-700 border-2 border-red-500" : "bg-gray-100 text-gray-500 border-2 border-transparent"}`}
+                className={`py-2 rounded-lg font-medium text-sm transition ${
+                  type === "expense"
+                    ? "bg-red-100 text-red-700 border-2 border-red-500"
+                    : "bg-gray-100 text-gray-500 border-2 border-transparent"
+                }`}
               >
                 Despesa
               </button>
             </div>
           </div>
 
+          {/* Descrição */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Descrição
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
             <input
               type="text"
               required
               value={description}
               onChange={(e) => setDescription(e.target.value)}
+              placeholder="Ex: Supermercado, Salário..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             />
           </div>
 
+          {/* Valor e Data */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Valor (R$)
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
               <input
                 type="text"
                 required
@@ -107,9 +115,7 @@ export function TransactionModal({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Data
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Data</label>
               <input
                 type="date"
                 required
@@ -120,19 +126,16 @@ export function TransactionModal({
             </div>
           </div>
 
+          {/* Categoria */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Categoria
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
             <select
               required
               value={category}
               onChange={(e) => setCategory(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             >
-              <option value="" disabled>
-                Selecione...
-              </option>
+              <option value="" disabled>Selecione...</option>
               <option value="alimentacao">Alimentação</option>
               <option value="moradia">Moradia</option>
               <option value="transporte">Transporte</option>
@@ -142,16 +145,46 @@ export function TransactionModal({
             </select>
           </div>
 
+          {/* CAMPO NOVO: Renda Fixa (Apenas para Receitas e se não estiver editando) */}
+          {!editingId && type === "income" && (
+            <div className="flex items-center pt-2">
+              <input
+                type="checkbox"
+                id="isFixed"
+                checked={isFixed}
+                onChange={(e) => setIsFixed(e.target.checked)}
+                className="w-4 h-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+              />
+              <label htmlFor="isFixed" className="ml-2 block text-sm text-gray-700">
+                Renda Fixa (Repetir mensalmente)
+              </label>
+            </div>
+          )}
+
+          {/* CAMPO NOVO: Parcelas (Apenas para Despesas e se não estiver editando) */}
+          {!editingId && type === "expense" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Número de Parcelas (1 = à vista)
+              </label>
+              <input
+                type="number"
+                min="1"
+                max="60"
+                value={installments}
+                onChange={(e) => setInstallments(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              />
+            </div>
+          )}
+
+          {/* Botão de Salvar */}
           <button
             type="submit"
             disabled={isSubmitting}
             className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition mt-4 disabled:opacity-70"
           >
-            {isSubmitting
-              ? "A salvar..."
-              : editingId
-                ? "Atualizar Transação"
-                : "Salvar Transação"}
+            {isSubmitting ? "Salvando..." : editingId ? "Atualizar Transação" : "Salvar Transação"}
           </button>
         </form>
       </div>
