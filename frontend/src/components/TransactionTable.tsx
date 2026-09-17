@@ -1,11 +1,10 @@
-// frontend/src/components/TransactionTable.tsx
 import { formatCurrency, formatDate } from "../utils/formatters";
 import type { Transaction } from "../types/Transaction";
 
 interface TransactionTableProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
-  onDelete: (id: string) => void;
+  onDelete: (id: number) => void;
   onOpenModal: () => void;
 }
 
@@ -16,7 +15,7 @@ export function TransactionTable({
   onOpenModal,
 }: TransactionTableProps) {
   return (
-    <section className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-lg font-semibold text-gray-900">Transações</h2>
         <button
@@ -45,16 +44,16 @@ export function TransactionTable({
               </tr>
             ) : (
               transactions.map((t) => (
-                <tr key={t._id} className="hover:bg-gray-50 transition">
+                <tr key={t.id} className="hover:bg-gray-50 transition">
                   <td className="p-4 font-medium text-gray-900">
                     {t.description}
-                    <span className="block text-xs text-gray-500 capitalize">
-                      {t.category}
-                    </span>
+                    <span className="block text-xs text-gray-500 capitalize">{t.category}</span>
                   </td>
                   <td className="p-4 text-gray-500">{formatDate(t.date)}</td>
                   <td
-                    className={`p-4 font-bold text-right ${t.type === "income" ? "text-emerald-600" : "text-red-600"}`}
+                    className={`p-4 font-bold text-right ${
+                      t.type === "income" ? "text-emerald-600" : "text-red-600"
+                    }`}
                   >
                     {t.type === "income" ? "+" : "-"} {formatCurrency(t.amount)}
                   </td>
@@ -67,7 +66,7 @@ export function TransactionTable({
                       ✏️
                     </button>
                     <button
-                      onClick={() => onDelete(t._id)}
+                      onClick={() => onDelete(t.id!)}
                       className="text-red-400 hover:text-red-600 transition"
                       title="Excluir"
                     >
