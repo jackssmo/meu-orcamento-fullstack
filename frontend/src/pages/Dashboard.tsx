@@ -78,6 +78,7 @@ export function Dashboard() {
   const [date, setDate] = useState(getTodayInputValue);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
 
   const [isFixed, setIsFixed] = useState(false);
   const [installments, setInstallments] = useState("1");
@@ -224,34 +225,21 @@ export function Dashboard() {
     }
   }
 
-  async function handleDelete(transaction: Transaction) {
-    if (!transaction.id) return;
+  function handleDelete(transaction: Transaction) {
+    setTransactionToDelete(transaction);
+  }
 
-    const isInstallmentExpense =
-      transaction.type === "expense" &&
-      !transaction.is_fixed &&
-      (transaction.installments || 1) > 1;
-    let scope = "";
+  async function confirmDelete(scope: "single" | "series") {
+    const transaction = transactionToDelete;
+    if (!transaction?.id) return;
 
-    if (isInstallmentExpense) {
-      const deleteSeries = window.confirm(
-        "Esta despesa possui parcelas. Clique em OK para apagar todas as parcelas ou em Cancelar para escolher apagar somente esta parcela.",
-      );
-      if (deleteSeries) {
-        scope = "?scope=series";
-      } else if (!window.confirm("Apagar somente a parcela deste mês?")) {
-        return;
-      }
-    } else if (
-      !window.confirm("Tem certeza que deseja apagar esta transação? Receitas fixas também removem os próximos meses.")
-    ) {
-      return;
-    }
+    const queryScope = scope === "series" ? "?scope=series" : "";
 
     try {
-      const response = await api.delete(`/transactions/${transaction.id}${scope}`);
+      const response = await api.delete(`/transactions/${transaction.id}${queryScope}`);
       await Promise.all([fetchTransactions(), refreshFinancialData()]);
       toast.success(response.data.message || "Transação apagada com sucesso!");
+      setTransactionToDelete(null);
     } catch (error) {
       console.error(error);
       toast.error("Erro ao apagar transação.");
@@ -423,6 +411,82 @@ export function Dashboard() {
           </section>
         </div>
       </main>
+
+      {transactionToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-slate-800">Excluir transação</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              {transactionToDelete.description}
+            </p>
+            <p className="mt-4 text-sm text-slate-600">
+              Escolha exatamente o que deseja apagar:
+            </p>
+
+            <div className="mt-5 space-y-3">
+              {transactionToDelete.type === "expense" &&
+                !transactionToDelete.is_fixed &&
+                (transactionToDelete.installments || 1) > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => void confirmDelete("single")}
+                      className="w-full rounded-lg border border-red-200 px-4 py-3 text-left text-sm font-semibold text-red-700 hover:bg-red-50"
+                    >
+                      Apagar somente esta parcela
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void confirmDelete("series")}
+                      className="w-full rounded-lg bg-red-600 px-4 py-3 text-left text-sm font-semibold text-white hover:bg-red-700"
+                    >
+                      Apagar todas as parcelas
+                    </button>
+                  </>
+                )}
+
+              {transactionToDelete.type === "income" && Boolean(transactionToDelete.is_fixed) && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => void confirmDelete("single")}
+                    className="w-full rounded-lg border border-red-200 px-4 py-3 text-left text-sm font-semibold text-red-700 hover:bg-red-50"
+                  >
+                    Apagar somente esta ocorrência
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => void confirmDelete("series")}
+                    className="w-full rounded-lg bg-red-600 px-4 py-3 text-left text-sm font-semibold text-white hover:bg-red-700"
+                  >
+                    Apagar esta e as próximas ocorrências
+                  </button>
+                </>
+              )}
+
+              {transactionToDelete.type === "expense" &&
+                !transactionToDelete.is_fixed &&
+                (transactionToDelete.installments || 1) <= 1 && (
+                  <button
+                    type="button"
+                    onClick={() => void confirmDelete("single")}
+                    className="w-full rounded-lg bg-red-600 px-4 py-3 text-left text-sm font-semibold text-white hover:bg-red-700"
+                  >
+                    Apagar transação
+                  </button>
+                )}
+
+              <button
+                type="button"
+                onClick={() => setTransactionToDelete(null)}
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <TransactionModal
         isOpen={isModalOpen}

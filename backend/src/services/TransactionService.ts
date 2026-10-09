@@ -101,7 +101,7 @@ export class TransactionService {
         }
 
         const isFixedIncome = existingTransaction.type === 'income' && Boolean(existingTransaction.is_fixed);
-        if (isFixedIncome) {
+        if (isFixedIncome && deleteSeries) {
             await this.transactionRepository.deleteFixedIncomeFromDate(userId, existingTransaction);
         } else if (
             deleteSeries &&
@@ -115,7 +115,7 @@ export class TransactionService {
         }
 
         return {
-            deletedFutureIncome: isFixedIncome,
+            deletedFutureIncome: isFixedIncome && deleteSeries,
             deletedSeries:
                 deleteSeries &&
                 existingTransaction.type === 'expense' &&
