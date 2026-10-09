@@ -1,7 +1,6 @@
 import { Transaction } from '../models/Transaction';
 import { TransactionRepository } from '../repositories/TransactionRepository';
 import { transactionSchema } from '../validators/transaction.schema';
-import { splitAmountInCents } from '../utils/money';
 import { getMonthlyOccurrenceDate } from '../utils/recurrenceDate';
 
 export class TransactionService {
@@ -16,7 +15,7 @@ export class TransactionService {
         }
 
         const occurrenceCount = is_fixed ? 12 : (installments ?? 1);
-        const installmentCents = splitAmountInCents(amount, occurrenceCount);
+        const installmentAmount = Math.round(amount * 100) / 100;
         const firstDate = new Date(date);
         firstDate.setUTCHours(0, 0, 0, 0);
         if (Number.isNaN(firstDate.getTime())) {
@@ -26,11 +25,10 @@ export class TransactionService {
 
         for (let occurrence = 0; occurrence < occurrenceCount; occurrence += 1) {
             const transactionDate = getMonthlyOccurrenceDate(firstDate, occurrence);
-            const occurrenceCents = is_fixed ? Math.round(amount * 100) : (installmentCents[occurrence] ?? 0);
             newTransactions.push({
                 user_id: userId,
                 description: is_fixed ? `${description} (${occurrence + 1}/12)` : `${description} (${occurrence + 1}/${occurrenceCount})`,
-                amount: occurrenceCents / 100,
+                amount: installmentAmount,
                 type,
                 category,
                 date: transactionDate.toISOString().substring(0, 10),
@@ -70,12 +68,28 @@ export class TransactionService {
             date: parsed.data.date.toISOString().substring(0, 10),
         };
 
-        await this.transactionRepository.update(id, updatedTransaction);
+        const isInstallmentExpense =
+            existingTransaction.type === 'expense' &&
+            !existingTransaction.is_fixed &&
+            (existingTransaction.installments ?? 1) > 1;
+
+        if (isInstallmentExpense) {
+            await this.transactionRepository.updateInstallmentSeries(
+                existingTransaction,
+                updatedTransaction,
+            );
+        } else {
+            await this.transactionRepository.update(id, updatedTransaction);
+        }
 
         return updatedTransaction;
     }
 
-    async deleteTransaction(id: number, userId: number): Promise<{ deletedFutureIncome: boolean }> {
+    async deleteTransaction(
+        id: number,
+        userId: number,
+        deleteSeries = false,
+    ): Promise<{ deletedFutureIncome: boolean; deletedSeries: boolean }> {
         const existingTransaction = await this.transactionRepository.findById(id);
 
         if (!existingTransaction) {
@@ -89,11 +103,25 @@ export class TransactionService {
         const isFixedIncome = existingTransaction.type === 'income' && Boolean(existingTransaction.is_fixed);
         if (isFixedIncome) {
             await this.transactionRepository.deleteFixedIncomeFromDate(userId, existingTransaction);
+        } else if (
+            deleteSeries &&
+            existingTransaction.type === 'expense' &&
+            !existingTransaction.is_fixed &&
+            (existingTransaction.installments ?? 1) > 1
+        ) {
+            await this.transactionRepository.deleteInstallmentSeries(userId, existingTransaction);
         } else {
             await this.transactionRepository.delete(id, userId);
         }
 
-        return { deletedFutureIncome: isFixedIncome };
+        return {
+            deletedFutureIncome: isFixedIncome,
+            deletedSeries:
+                deleteSeries &&
+                existingTransaction.type === 'expense' &&
+                !existingTransaction.is_fixed &&
+                (existingTransaction.installments ?? 1) > 1,
+        };
     }
     async getTransactionSummary(userId: number, month?: number, year?: number) {
     return await this.transactionRepository.getSummary(userId, month, year);

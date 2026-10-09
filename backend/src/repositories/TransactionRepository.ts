@@ -110,9 +110,68 @@ export class TransactionRepository {
     await db.execute(query, values);
   }
 
+  async updateInstallmentSeries(
+    existingTransaction: Transaction,
+    transaction: Transaction,
+  ): Promise<void> {
+    if (existingTransaction.id === undefined || transaction.id === undefined) {
+      throw new Error('Transação inválida para atualização.');
+    }
+
+    const totalInstallments = existingTransaction.installments ?? 1;
+    const installmentNumber = existingTransaction.installment_number ?? 1;
+    const baseDescription = transaction.description.replace(/\s\(\d+\/\d+\)$/, '');
+    const query = `
+      UPDATE transactions
+      SET description = CONCAT(?, ' (', installment_number, '/', installments, ')'),
+          amount = ?,
+          type = ?,
+          category = ?,
+          date = IF(id = ?, ?, date)
+      WHERE user_id = ?
+        AND type = 'expense'
+        AND is_fixed = 0
+        AND installments = ?
+        AND installment_number >= ?
+        AND description LIKE ?
+    `;
+
+    await db.execute(query, [
+      baseDescription,
+      transaction.amount,
+      transaction.type,
+      transaction.category,
+      existingTransaction.id,
+      transaction.date,
+      transaction.user_id,
+      totalInstallments,
+      installmentNumber,
+      `${existingTransaction.description.replace(/\s\(\d+\/\d+\)$/, '')} (%/${totalInstallments})`,
+    ]);
+  }
+
   async delete(id: number, userId: number): Promise<void> {
     const query = 'DELETE FROM transactions WHERE id = ? AND user_id = ?';
     await db.execute(query, [id, userId]);
+  }
+
+  async deleteInstallmentSeries(userId: number, transaction: Transaction): Promise<void> {
+    const baseDescription = transaction.description.replace(/\s\(\d+\/\d+\)$/, '');
+    await db.execute(
+      `DELETE FROM transactions
+       WHERE user_id = ?
+         AND type = 'expense'
+         AND is_fixed = 0
+         AND installments = ?
+         AND category = ?
+         AND description LIKE ?`,
+      [
+        userId,
+        transaction.installments ?? 1,
+        transaction.category,
+        `${baseDescription} (%/${transaction.installments ?? 1})`,
+      ],
+    );
   }
 
   async deleteFixedIncomeFromDate(userId: number, transaction: Transaction): Promise<void> {

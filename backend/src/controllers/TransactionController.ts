@@ -97,11 +97,14 @@ export class TransactionController {
                 return res.status(400).json({ error: 'ID de transação inválido.' });
             }
 
-            const result = await transactionService.deleteTransaction(transactionId, userId);
+            const deleteSeries = req.query.scope === 'series';
+            const result = await transactionService.deleteTransaction(transactionId, userId, deleteSeries);
 
             return res.status(200).json({
                 message: result.deletedFutureIncome
                     ? 'Receita e lançamentos futuros excluídos com sucesso!'
+                    : result.deletedSeries
+                        ? 'Todas as parcelas foram excluídas com sucesso!'
                     : 'Transação excluída com sucesso!',
             });
 
