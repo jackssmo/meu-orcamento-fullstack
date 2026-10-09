@@ -54,6 +54,7 @@ button, input, select { font: inherit; }
 .month-picker-button { min-height: 30px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #8492a7; cursor: pointer; font-size: 11px; font-weight: 600; transition: .2s; }
 .month-picker-button:hover { background: #edf3fc; color: #2454a6; }
 .month-picker-button.active { border-color: #2454a6; background: #2454a6; color: #fff; box-shadow: 0 3px 8px #2454a633; }
+.transaction-modal { max-height: calc(100dvh - 2rem); overflow-y: auto; }
 @media (max-width: 760px) {
   .app-sidebar { position: static; width: auto; min-height: auto; padding: 16px; }
   .brand-mark { padding-bottom: 16px; }
@@ -70,4 +71,32 @@ button, input, select { font: inherit; }
   .month-picker-button { flex: 0 0 58px; min-height: 38px; border-color: #e0e6ef; background: #fff; }
   .month-picker-button.active { border-color: #2454a6; }
   .page-heading .primary-button { margin-top: 18px; }
+  .app-sidebar { position: sticky; top: 0; }
+  .brand-mark { justify-content: center; }
+  .brand-mark > div:last-child { min-width: 0; }
+  .brand-mark strong { font-size: 16px; }
+  .sidebar-nav { margin: 0 -4px; padding-bottom: 2px; }
+  .nav-item { flex: 1 0 auto; justify-content: center; min-height: 42px; }
+  .surface { border-radius: 10px; }
+  .stat-card { min-height: 108px; padding: 17px; }
+  .stat-value { font-size: 22px; }
+  .section-title { align-items: flex-start; gap: 12px; }
+  .section-title span { text-align: right; }
+  .transaction-modal { padding: 20px; border-radius: 14px; }
+  .transaction-modal form { padding-bottom: env(safe-area-inset-bottom); }
+  .transaction-modal input, .transaction-modal select { min-height: 46px; }
+  .transaction-modal button { min-height: 44px; }
+  .surface.overflow-hidden { overflow: hidden; }
+  table { min-width: 600px; }
+}
+@media (max-width: 480px) {
+  .app-content { padding: 20px 12px calc(24px + env(safe-area-inset-bottom)); }
+  .page-heading h1 { font-size: 24px; }
+  .selected-period { align-items: flex-start; flex-direction: column; gap: 3px; }
+  .flex.h-20 { height: 68px; }
+  .month-picker-button { flex-basis: 54px; }
+  .stat-card { min-height: 96px; }
+  .stat-card-icon { top: 15px; right: 15px; width: 30px; height: 30px; }
+  .stat-value { margin-top: 9px; font-size: 20px; }
+  .transaction-modal { max-height: calc(100dvh - 1rem); padding: 16px; }
 }
