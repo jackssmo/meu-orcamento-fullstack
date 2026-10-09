@@ -35,6 +35,12 @@ app.use('/auth', authRoutes);
 app.use('/transactions', transactionRoutes);
 app.use('/financial', financialRoutes);
 
+// The /api prefix is the public URL used by the frontend in production.
+// Keep the unprefixed routes above for backwards compatibility.
+app.use('/api/auth', authRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/financial', financialRoutes);
+
 app.get('/', (req, res) => {
   res.json({ message: 'API do Meu Orcamento funcionando!' });
 });

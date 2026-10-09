@@ -58,6 +58,16 @@ Crie `frontend/.env`:
 VITE_API_URL=http://localhost:3000/api
 ```
 
+Em produção, configure essa variável no serviço do frontend para a URL pública
+do backend com o sufixo `/api`, por exemplo:
+
+```env
+VITE_API_URL=https://meu-orcamento.onrender.com/api
+```
+
+O backend também mantém as rotas sem `/api` por compatibilidade, mas novas
+configurações devem usar o prefixo `/api`.
+
 ## 4. Iniciar os serviços
 
 Use dois terminais.
@@ -91,4 +101,3 @@ Em desenvolvimento, use `localhost` ou `127.0.0.1` na porta 5173 e mantenha essa
 ### Banco não atualizado
 
 Execute `npm run migrate` dentro de `backend`.
-

@@ -36,7 +36,19 @@ async function run(): Promise<void> {
           await connection.query(statement);
         } catch (error: unknown) {
           const code = (error as { errno?: number }).errno;
-          if (code !== 1050 && code !== 1060 && code !== 1061 && code !== 1826) throw error;
+          const isLegacyPasswordRename =
+            migrationName === '003_rename_password_column.sql' &&
+            statement.startsWith('ALTER TABLE users') &&
+            code === 1054;
+          if (
+            code !== 1050 &&
+            code !== 1060 &&
+            code !== 1061 &&
+            code !== 1826 &&
+            !isLegacyPasswordRename
+          ) {
+            throw error;
+          }
         }
       }
       await connection.execute('INSERT INTO schema_migrations (name) VALUES (?)', [migrationName]);
