@@ -27,8 +27,19 @@ export class TransactionController {
             if (!userId) {
                 return res.status(401).json({ message: 'Usuário não autenticado.' });
             }
-            const transactions = await transactionService.getTransactionsByUserId(userId);
-            return res.status(200).json(transactions);
+            const page = Math.max(1, Number(req.query.page) || 1);
+            const pageSize = Math.min(100, Math.max(1, Number(req.query.pageSize) || 20));
+            const month = req.query.month ? Number(req.query.month) : undefined;
+            const year = req.query.year ? Number(req.query.year) : undefined;
+            const type = req.query.type === 'income' || req.query.type === 'expense' ? req.query.type : undefined;
+            const search = typeof req.query.search === 'string' ? req.query.search.trim() : undefined;
+            const options = { page, pageSize } as Parameters<typeof transactionService.getTransactionsByUserId>[1];
+            if (month !== undefined) options.month = month;
+            if (year !== undefined) options.year = year;
+            if (type !== undefined) options.type = type;
+            if (search !== undefined) options.search = search;
+            const result = await transactionService.getTransactionsByUserId(userId, options);
+            return res.status(200).json({ data: result.rows, pagination: { page, pageSize, total: result.total, totalPages: Math.ceil(result.total / pageSize) } });
         }
         catch (error: any) {
             return res.status(400).json({ message: error.message });
@@ -86,9 +97,13 @@ export class TransactionController {
                 return res.status(400).json({ error: 'ID de transação inválido.' });
             }
 
-            await transactionService.deleteTransaction(transactionId, userId);
+            const result = await transactionService.deleteTransaction(transactionId, userId);
 
-            return res.status(200).json({ message: 'Transação excluída com sucesso!' });
+            return res.status(200).json({
+                message: result.deletedFutureIncome
+                    ? 'Receita e lançamentos futuros excluídos com sucesso!'
+                    : 'Transação excluída com sucesso!',
+            });
 
         } catch (error: any) {
             return res.status(400).json({ error: error.message });
@@ -103,7 +118,9 @@ export class TransactionController {
                 return res.status(401).json({ error: 'Usuário não autenticado.' });
             }
 
-            const summary = await transactionService.getTransactionSummary(userId);
+            const month = req.query.month ? Number(req.query.month) : undefined;
+            const year = req.query.year ? Number(req.query.year) : undefined;
+            const summary = await transactionService.getTransactionSummary(userId, month, year);
 
             return res.status(200).json(summary);
 

@@ -25,7 +25,10 @@ if (scheme !== 'Bearer' || !token) {
 
   try {
     
-    const decoded = jwt.verify(token, env.jwtSecret) as { id: number };
+    const decoded = jwt.verify(token, env.jwtSecret) as { id?: unknown };
+    if (typeof decoded.id !== 'number' || !Number.isInteger(decoded.id) || decoded.id <= 0) {
+      return res.status(401).json({ error: 'Token inválido ou expirado.' });
+    }
 
     req.user = { id: decoded.id };
 

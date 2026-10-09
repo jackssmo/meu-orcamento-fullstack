@@ -1,43 +1,47 @@
 import { Transaction } from '../models/Transaction';
 import { TransactionRepository } from '../repositories/TransactionRepository';
+import { transactionSchema } from '../validators/transaction.schema';
+import { splitAmountInCents } from '../utils/money';
+import { getMonthlyOccurrenceDate } from '../utils/recurrenceDate';
 
 export class TransactionService {
     constructor(private transactionRepository: TransactionRepository) { }
 
     async createTransaction(userId: number, data: Omit<Transaction, 'id' | 'user_id' | 'created_at'>): Promise<Transaction> {
-        const { description, amount, type, category, date } = data;
-
-
-        if (!description || description.trim().length < 2) {
-            throw new Error("A descrição da transação deve ter pelo menos 2 caracteres.");
-        };
-
-        if (typeof amount !== 'number' || !Number.isFinite(amount) || amount <= 0) {
-            throw new Error("O valor da transação deve ser maior que zero.");
+        const parsed = transactionSchema.safeParse(data);
+        if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Dados da transação inválidos.');
+        const { description, amount, type, category, date, installments, is_fixed, account_id } = parsed.data;
+        if (is_fixed && type !== 'income') {
+            throw new Error("A recorrência fixa está disponível apenas para receitas.");
         }
 
-        if (type !== 'income' && type !== 'expense') {
-            throw new Error("O tipo da transação deve ser 'receita' ou 'despesa'.");
+        const occurrenceCount = is_fixed ? 12 : (installments ?? 1);
+        const installmentCents = splitAmountInCents(amount, occurrenceCount);
+        const firstDate = new Date(date);
+        firstDate.setUTCHours(0, 0, 0, 0);
+        if (Number.isNaN(firstDate.getTime())) {
+            throw new Error("A data da transação é inválida.");
         }
+        const newTransactions: Transaction[] = [];
 
-        if (!category || category.trim() === '') {
-            throw new Error("A categoria da transação é obrigatória.");
+        for (let occurrence = 0; occurrence < occurrenceCount; occurrence += 1) {
+            const transactionDate = getMonthlyOccurrenceDate(firstDate, occurrence);
+            const occurrenceCents = is_fixed ? Math.round(amount * 100) : (installmentCents[occurrence] ?? 0);
+            newTransactions.push({
+                user_id: userId,
+                description: is_fixed ? `${description} (${occurrence + 1}/12)` : `${description} (${occurrence + 1}/${occurrenceCount})`,
+                amount: occurrenceCents / 100,
+                type,
+                category,
+                date: transactionDate.toISOString().substring(0, 10),
+                is_fixed: Boolean(is_fixed),
+                installments: occurrenceCount,
+                installment_number: occurrence + 1,
+                account_id,
+            });
         }
-
-        if (!date) {
-            throw new Error("A data da transação é obrigatória.");
-        }
-
-        const newTransaction: Transaction = {
-            user_id: userId,
-            description,
-            amount,
-            type,
-            category,
-            date
-        };
-
-        return await this.transactionRepository.create(newTransaction);
+        const created = await this.transactionRepository.createMany(newTransactions);
+        return created[0] as Transaction;
     }
 
     async updateTransaction(
@@ -56,33 +60,14 @@ export class TransactionService {
             throw new Error('Acesso negado. Você não tem permissão para alterar esta transação.');
         }
 
-        if (!data.description || data.description.trim().length < 2) {
-            throw new Error('A descrição deve ter pelo menos 2 caracteres.');
-        }
-        if (
-    typeof data.amount !== 'number' ||
-    !Number.isFinite(data.amount) ||
-    data.amount <= 0
-) {
-            throw new Error('O valor da transação deve ser maior que zero.');
-        }
-
-        if (data.type !== 'income' && data.type !== 'expense') {
-    throw new Error("O tipo da transação deve ser 'income' ou 'expense'.");
-}
-
-if (!data.category || data.category.trim() === '') {
-    throw new Error('A categoria da transação é obrigatória.');
-}
-
-if (!data.date) {
-    throw new Error('A data da transação é obrigatória.');
-}
+        const parsed = transactionSchema.safeParse(data);
+        if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Dados da transação inválidos.');
 
         const updatedTransaction: Transaction = {
             id,
             user_id: userId,
-            ...data
+            ...parsed.data,
+            date: parsed.data.date.toISOString().substring(0, 10),
         };
 
         await this.transactionRepository.update(id, updatedTransaction);
@@ -90,7 +75,7 @@ if (!data.date) {
         return updatedTransaction;
     }
 
-    async deleteTransaction(id: number, userId: number): Promise<void> {
+    async deleteTransaction(id: number, userId: number): Promise<{ deletedFutureIncome: boolean }> {
         const existingTransaction = await this.transactionRepository.findById(id);
 
         if (!existingTransaction) {
@@ -101,13 +86,20 @@ if (!data.date) {
             throw new Error('Acesso negado. Você não tem permissão para excluir esta transação.');
         }
 
-        await this.transactionRepository.delete(id);
+        const isFixedIncome = existingTransaction.type === 'income' && Boolean(existingTransaction.is_fixed);
+        if (isFixedIncome) {
+            await this.transactionRepository.deleteFixedIncomeFromDate(userId, existingTransaction);
+        } else {
+            await this.transactionRepository.delete(id, userId);
+        }
+
+        return { deletedFutureIncome: isFixedIncome };
     }
-    async getTransactionSummary(userId: number) {
-    return await this.transactionRepository.getSummary(userId);
+    async getTransactionSummary(userId: number, month?: number, year?: number) {
+    return await this.transactionRepository.getSummary(userId, month, year);
   }
 
-    async getTransactionsByUserId(userId: number): Promise<Transaction[]> {
-        return await this.transactionRepository.findByUserId(userId);
+    async getTransactionsByUserId(userId: number, options: Parameters<TransactionRepository['findByUserId']>[1]) {
+        return await this.transactionRepository.findByUserId(userId, options);
     }
 }

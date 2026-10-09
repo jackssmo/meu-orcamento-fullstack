@@ -3,21 +3,23 @@ import { Transaction } from '../models/Transaction';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class TransactionRepository {
+  private toValues(transaction: Transaction): (number | string | boolean | null | Date)[] {
+    return [
+      transaction.user_id, transaction.description, transaction.amount, transaction.type,
+      transaction.category, transaction.date, transaction.is_fixed ?? false,
+      transaction.installments ?? 1, transaction.installment_number ?? 1,
+      transaction.recurrence_end_date ?? null, transaction.account_id ?? null,
+    ];
+  }
   
   async create(transaction: Transaction): Promise<Transaction> {
     const query = `
-      INSERT INTO transactions (user_id, description, amount, type, category, date)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO transactions
+        (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
-    const values = [
-      transaction.user_id,
-      transaction.description,
-      transaction.amount,
-      transaction.type,
-      transaction.category,
-      transaction.date
-    ];
+    const values = this.toValues(transaction);
 
     const [result] = await db.execute<ResultSetHeader>(query, values);
 
@@ -27,12 +29,58 @@ export class TransactionRepository {
     };
   }
 
-  async findByUserId(userId: number): Promise<Transaction[]> {
-    const query = 'SELECT * FROM transactions WHERE user_id = ? ORDER BY date DESC';
-    
-    const [rows] = await db.execute<RowDataPacket[]>(query, [userId]);
-    
-    return rows as Transaction[];
+  async createMany(transactions: Transaction[]): Promise<Transaction[]> {
+    const connection = await db.getConnection();
+    try {
+      await connection.beginTransaction();
+      const query = `
+        INSERT INTO transactions
+          (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `;
+      const created: Transaction[] = [];
+      for (const transaction of transactions) {
+        const [result] = await connection.execute<ResultSetHeader>(query, this.toValues(transaction));
+        created.push({ id: result.insertId, ...transaction });
+      }
+      await connection.commit();
+      return created;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
+  async findByUserId(userId: number, options: {
+    month?: number; year?: number; search?: string; type?: 'income' | 'expense';
+    page: number; pageSize: number;
+  }): Promise<{ rows: Transaction[]; total: number }> {
+    const filters = ['user_id = ?'];
+    const values: (number | string)[] = [userId];
+    if (options.month !== undefined && options.year !== undefined) {
+      filters.push('MONTH(date) = ?', 'YEAR(date) = ?');
+      values.push(options.month, options.year);
+    }
+    if (options.search) {
+      filters.push('(description LIKE ? OR category LIKE ?)');
+      values.push(`%${options.search}%`, `%${options.search}%`);
+    }
+    if (options.type) {
+      filters.push('type = ?');
+      values.push(options.type);
+    }
+    const where = filters.join(' AND ');
+    const offset = (options.page - 1) * options.pageSize;
+    const [rows] = await db.execute<RowDataPacket[]>(
+      `SELECT * FROM transactions WHERE ${where} ORDER BY date DESC, id DESC LIMIT ? OFFSET ?`,
+      [...values, options.pageSize, offset],
+    );
+    const [countRows] = await db.execute<RowDataPacket[]>(
+      `SELECT COUNT(*) AS total FROM transactions WHERE ${where}`, values,
+    );
+    return { rows: rows as Transaction[], total: Number(countRows[0]?.total ?? 0) };
   }
 
   async findById(id: number): Promise<Transaction | null> {
@@ -47,7 +95,7 @@ export class TransactionRepository {
     const query = `
       UPDATE transactions 
       SET description = ?, amount = ?, type = ?, category = ?, date = ?
-      WHERE id = ?
+      WHERE id = ? AND user_id = ?
     `;
     const values = [
       transaction.description,
@@ -55,38 +103,75 @@ export class TransactionRepository {
       transaction.type,
       transaction.category,
       transaction.date,
-      id
+      id,
+      transaction.user_id
     ];
 
     await db.execute(query, values);
   }
 
-  async delete(id: number): Promise<void> {
-    const query = 'DELETE FROM transactions WHERE id = ?';
-    await db.execute(query, [id]);
+  async delete(id: number, userId: number): Promise<void> {
+    const query = 'DELETE FROM transactions WHERE id = ? AND user_id = ?';
+    await db.execute(query, [id, userId]);
   }
 
-  async getSummary(userId: number): Promise<{ totalIncome: number; totalExpense: number; balance: number }> {
+  async deleteFixedIncomeFromDate(userId: number, transaction: Transaction): Promise<void> {
+    if (transaction.id === undefined) {
+      throw new Error('Transação inválida para exclusão.');
+    }
+    const baseDescription = transaction.description.replace(/\s\(\d+\/12\)$/, '');
+    const query = `
+      DELETE FROM transactions
+      WHERE user_id = ?
+        AND date >= ?
+        AND (
+          id = ?
+          OR (
+            type = 'income'
+            AND is_fixed = 1
+            AND category = ?
+            AND amount = ?
+            AND description LIKE ?
+          )
+        )
+    `;
+    await db.execute(query, [
+      userId,
+      transaction.date,
+      transaction.id,
+      transaction.category,
+      transaction.amount,
+      `${baseDescription} (%/12)`,
+    ]);
+  }
+
+  async getSummary(userId: number, month?: number, year?: number): Promise<{ totalIncome: number; totalExpense: number; balance: number; realizedBalance: number }> {
+    const period = month !== undefined && year !== undefined ? ' AND MONTH(date) = ? AND YEAR(date) = ?' : '';
     const query = `
       SELECT 
         COALESCE(SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END), 0) AS totalIncome,
-        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS totalExpense
+        COALESCE(SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END), 0) AS totalExpense,
+        COALESCE(SUM(CASE WHEN date <= CURRENT_DATE AND type = 'income' THEN amount
+          WHEN date <= CURRENT_DATE AND type = 'expense' THEN -amount ELSE 0 END), 0) AS realizedBalance
       FROM transactions 
-      WHERE user_id = ?
+      WHERE user_id = ?${period}
     `;
 
-    const [rows] = await db.execute<RowDataPacket[]>(query, [userId]);
+    const values = month !== undefined && year !== undefined ? [userId, month, year] : [userId];
+    const [rows] = await db.execute<RowDataPacket[]>(query, values);
     const row = rows[0];
 
     // Convertemos para Number pois o driver do MySQL pode retornar campos DECIMAL como string
     const totalIncome = Number(row?.totalIncome) || 0;
     const totalExpense = Number(row?.totalExpense) || 0;
     const balance = totalIncome - totalExpense;
+    const realizedBalance = Number(row?.realizedBalance) || 0;
 
     return {
       totalIncome,
       totalExpense,
-      balance
+      balance,
+      realizedBalance
     };
   }
 }

@@ -6,5 +6,10 @@ export interface Transaction {
   type: 'income' | 'expense';
   category: string; 
   date: string | Date; 
+  is_fixed?: boolean;
+  installments?: number;
+  installment_number?: number;
+  recurrence_end_date?: string | Date | null;
+  account_id?: number | null | undefined;
   created_at?: Date;
 }
