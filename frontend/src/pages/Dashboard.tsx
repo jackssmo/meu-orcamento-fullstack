@@ -485,9 +485,12 @@ export function Dashboard() {
                 </>
               )}
 
-              {transactionToDelete.type === "expense" &&
-                !transactionToDelete.is_fixed &&
-                (transactionToDelete.installments || 1) <= 1 && (
+              {!(
+                (transactionToDelete.type === "expense" &&
+                  !transactionToDelete.is_fixed &&
+                  (transactionToDelete.installments || 1) > 1) ||
+                (transactionToDelete.type === "income" && Boolean(transactionToDelete.is_fixed))
+              ) && (
                   <button
                     type="button"
                     onClick={() => void confirmDelete("single")}
