@@ -2,26 +2,12 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
+import { getMysqlOptions } from '../config/mysqlOptions';
 
 dotenv.config();
 
-const requiredEnv = (name: string): string => {
-  const value = process.env[name];
-  if (value === undefined) throw new Error(`${name} não configurado.`);
-  return value;
-};
-
 async function run(): Promise<void> {
-  const connection = await mysql.createConnection({
-    host: requiredEnv('DB_HOST'),
-    user: requiredEnv('DB_USER'),
-    port: Number(process.env.DB_PORT),
-    password: requiredEnv('DB_PASSWORD'),
-    database: requiredEnv('DB_NAME'),
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
+  const connection = await mysql.createConnection(getMysqlOptions());
 
   try {
     await connection.execute(`

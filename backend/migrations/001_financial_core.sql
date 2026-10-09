@@ -1,11 +1,35 @@
-ALTER TABLE users ADD COLUMN name VARCHAR(120) NULL AFTER id;
+-- 1. Criar a tabela de usuários primeiro (caso não exista)
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(120) NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
+  password_hash VARCHAR(255) NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 
+-- 2. Criar a tabela de transações base (caso não exista)
+CREATE TABLE IF NOT EXISTS transactions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  description VARCHAR(255) NOT NULL,
+  amount DECIMAL(12,2) NOT NULL,
+  type ENUM('income', 'expense') NOT NULL,
+  category VARCHAR(80) NOT NULL,
+  date DATE NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_transactions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- 3. Agora sim, aplicar os ALTER TABLE para adicionar colunas extras
+ALTER TABLE users ADD COLUMN name VARCHAR(120) NULL;
+ALTER TABLE transactions ADD COLUMN category VARCHAR(80) NOT NULL;
 ALTER TABLE transactions ADD COLUMN is_fixed BOOLEAN NOT NULL DEFAULT FALSE;
 ALTER TABLE transactions ADD COLUMN installments INT NOT NULL DEFAULT 1;
 ALTER TABLE transactions ADD COLUMN installment_number INT NOT NULL DEFAULT 1;
 ALTER TABLE transactions ADD COLUMN recurrence_end_date DATE NULL;
 ALTER TABLE transactions ADD COLUMN account_id INT NULL;
 
+-- 4. Criar as demais tabelas (com os pontos e vírgulas corretos no final de cada bloco)
 CREATE TABLE IF NOT EXISTS categories (
   id INT AUTO_INCREMENT PRIMARY KEY,
   user_id INT NOT NULL,
