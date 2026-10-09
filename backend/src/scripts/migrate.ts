@@ -15,8 +15,12 @@ async function run(): Promise<void> {
   const connection = await mysql.createConnection({
     host: requiredEnv('DB_HOST'),
     user: requiredEnv('DB_USER'),
+    port: Number(process.env.DB_PORT),
     password: requiredEnv('DB_PASSWORD'),
     database: requiredEnv('DB_NAME'),
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
 
   try {
