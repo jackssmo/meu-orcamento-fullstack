@@ -31,9 +31,9 @@ app.use(cors({
 app.use(express.json());
 app.use(rateLimit({ windowMs: 15 * 60 * 1000, limit: 300, standardHeaders: 'draft-7', legacyHeaders: false }));
 
-app.use('/api/auth', authRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/financial', financialRoutes);
+app.use('/auth', authRoutes);
+app.use('/transactions', transactionRoutes);
+app.use('/financial', financialRoutes);
 
 app.get('/', (req, res) => {
   res.json({ message: 'API do Meu Orcamento funcionando!' });
