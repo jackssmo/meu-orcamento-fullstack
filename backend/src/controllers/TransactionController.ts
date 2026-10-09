@@ -68,7 +68,8 @@ export class TransactionController {
             const updatedTransaction = await transactionService.updateTransaction(
                 transactionId,
                 userId,
-                req.body
+                req.body,
+                req.query.scope === 'series',
             );
 
             return res.status(200).json(updatedTransaction);

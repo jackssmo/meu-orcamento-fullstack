@@ -78,7 +78,9 @@ export function Dashboard() {
   const [date, setDate] = useState(getTodayInputValue);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingTransaction, setEditingTransaction] = useState<Transaction | null>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<Transaction | null>(null);
+  const [showEditScope, setShowEditScope] = useState(false);
 
   const [isFixed, setIsFixed] = useState(false);
   const [installments, setInstallments] = useState("1");
@@ -157,6 +159,8 @@ export function Dashboard() {
     setIsFixed(false);
     setInstallments("1");
     setEditingId(null);
+    setEditingTransaction(null);
+    setShowEditScope(false);
     setIsModalOpen(false);
   }
 
@@ -171,6 +175,7 @@ export function Dashboard() {
     setCategory(transaction.category);
     setDate(String(transaction.date).substring(0, 10));
     setEditingId(transaction.id || null);
+    setEditingTransaction(transaction);
     setIsModalOpen(true);
   }
 
@@ -189,10 +194,24 @@ export function Dashboard() {
 
   async function handleSubmitTransaction(e: FormEvent) {
     e.preventDefault();
-    setIsSubmitting(true);
+    const numericAmount = Number(amount.replace(/\./g, "").replace(",", "."));
+    const isInstallmentExpense =
+      Boolean(editingTransaction?.id) &&
+      editingTransaction?.type === "expense" &&
+      !editingTransaction.is_fixed &&
+      (editingTransaction.installments || 1) > 1;
 
+    if (isInstallmentExpense) {
+      setShowEditScope(true);
+      return;
+    }
+
+    await submitTransaction(numericAmount, false);
+  }
+
+  async function submitTransaction(numericAmount: number, updateSeries: boolean) {
+    setIsSubmitting(true);
     try {
-      const numericAmount = Number(amount.replace(/\./g, "").replace(",", "."));
       
       const data = {
         description,
@@ -205,7 +224,8 @@ export function Dashboard() {
       };
 
       if (editingId) {
-        await api.put(`/transactions/${editingId}`, { description, amount: numericAmount, type, category, date });
+        const scope = updateSeries ? "?scope=series" : "";
+        await api.put(`/transactions/${editingId}${scope}`, { description, amount: numericAmount, type, category, date });
         toast.success("Transação atualizada com sucesso!");
       } else {
         await api.post("/transactions", data);
@@ -213,6 +233,7 @@ export function Dashboard() {
       }
 
       closeModal();
+      setShowEditScope(false);
       await Promise.all([fetchTransactions(), refreshFinancialData()]);
     } catch (error) {
       console.error(error);
@@ -479,6 +500,40 @@ export function Dashboard() {
               <button
                 type="button"
                 onClick={() => setTransactionToDelete(null)}
+                className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showEditScope && editingTransaction && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-slate-800">Atualizar parcelas</h2>
+            <p className="mt-2 text-sm text-slate-600">
+              Esta despesa possui parcelas. Escolha como aplicar a alteração.
+            </p>
+            <div className="mt-5 space-y-3">
+              <button
+                type="button"
+                onClick={() => void submitTransaction(Number(amount.replace(/\./g, "").replace(",", ".")), false)}
+                className="w-full rounded-lg border border-blue-200 px-4 py-3 text-left text-sm font-semibold text-blue-700 hover:bg-blue-50"
+              >
+                Editar somente esta parcela
+              </button>
+              <button
+                type="button"
+                onClick={() => void submitTransaction(Number(amount.replace(/\./g, "").replace(",", ".")), true)}
+                className="w-full rounded-lg bg-[#2454a6] px-4 py-3 text-left text-sm font-semibold text-white hover:bg-[#1c4386]"
+              >
+                Editar esta e as próximas parcelas
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEditScope(false)}
                 className="w-full rounded-lg border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-50"
               >
                 Cancelar

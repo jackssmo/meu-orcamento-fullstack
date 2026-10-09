@@ -9,6 +9,7 @@ export interface Transaction {
   is_fixed?: boolean;
   installments?: number;
   installment_number?: number;
+  installment_group_id?: string | null;
   recurrence_end_date?: string | Date | null;
   account_id?: number | null | undefined;
   created_at?: Date;

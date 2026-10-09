@@ -2,6 +2,7 @@ import { Transaction } from '../models/Transaction';
 import { TransactionRepository } from '../repositories/TransactionRepository';
 import { transactionSchema } from '../validators/transaction.schema';
 import { getMonthlyOccurrenceDate } from '../utils/recurrenceDate';
+import { randomUUID } from 'node:crypto';
 
 export class TransactionService {
     constructor(private transactionRepository: TransactionRepository) { }
@@ -22,12 +23,18 @@ export class TransactionService {
             throw new Error("A data da transação é inválida.");
         }
         const newTransactions: Transaction[] = [];
+        const installmentGroupId = occurrenceCount > 1 ? randomUUID() : null;
 
         for (let occurrence = 0; occurrence < occurrenceCount; occurrence += 1) {
             const transactionDate = getMonthlyOccurrenceDate(firstDate, occurrence);
+            const descriptionWithOccurrence = is_fixed
+                ? `${description} (${occurrence + 1}/12)`
+                : occurrenceCount > 1
+                    ? `${description} (${occurrence + 1}/${occurrenceCount})`
+                    : description;
             newTransactions.push({
                 user_id: userId,
-                description: is_fixed ? `${description} (${occurrence + 1}/12)` : `${description} (${occurrence + 1}/${occurrenceCount})`,
+                description: descriptionWithOccurrence,
                 amount: installmentAmount,
                 type,
                 category,
@@ -35,6 +42,7 @@ export class TransactionService {
                 is_fixed: Boolean(is_fixed),
                 installments: occurrenceCount,
                 installment_number: occurrence + 1,
+                installment_group_id: installmentGroupId,
                 account_id,
             });
         }
@@ -45,7 +53,8 @@ export class TransactionService {
     async updateTransaction(
         id: number,
         userId: number,
-        data: Omit<Transaction, 'id' | 'user_id' | 'created_at'>
+        data: Omit<Transaction, 'id' | 'user_id' | 'created_at'>,
+        updateSeries = false,
     ): Promise<Transaction> {
 
         const existingTransaction = await this.transactionRepository.findById(id);
@@ -73,7 +82,7 @@ export class TransactionService {
             !existingTransaction.is_fixed &&
             (existingTransaction.installments ?? 1) > 1;
 
-        if (isInstallmentExpense) {
+        if (isInstallmentExpense && updateSeries) {
             await this.transactionRepository.updateInstallmentSeries(
                 existingTransaction,
                 updatedTransaction,

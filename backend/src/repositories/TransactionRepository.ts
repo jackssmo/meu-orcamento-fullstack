@@ -9,14 +9,15 @@ export class TransactionRepository {
       transaction.category, transaction.date, transaction.is_fixed ?? false,
       transaction.installments ?? 1, transaction.installment_number ?? 1,
       transaction.recurrence_end_date ?? null, transaction.account_id ?? null,
+      transaction.installment_group_id ?? null,
     ];
   }
   
   async create(transaction: Transaction): Promise<Transaction> {
     const query = `
       INSERT INTO transactions
-        (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id, installment_group_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const values = this.toValues(transaction);
@@ -35,8 +36,8 @@ export class TransactionRepository {
       await connection.beginTransaction();
       const query = `
         INSERT INTO transactions
-          (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id, installment_group_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const created: Transaction[] = [];
       for (const transaction of transactions) {
@@ -133,7 +134,15 @@ export class TransactionRepository {
         AND is_fixed = 0
         AND installments = ?
         AND installment_number >= ?
-        AND description LIKE ?
+        AND (
+          (? IS NOT NULL AND installment_group_id = ?)
+          OR (
+            ? IS NULL
+            AND description LIKE ?
+            AND category = ?
+            AND amount = ?
+          )
+        )
     `;
 
     await db.execute(query, [
@@ -146,7 +155,12 @@ export class TransactionRepository {
       transaction.user_id,
       totalInstallments,
       installmentNumber,
+      existingTransaction.installment_group_id ?? null,
+      existingTransaction.installment_group_id ?? null,
+      existingTransaction.installment_group_id ?? null,
       `${existingTransaction.description.replace(/\s\(\d+\/\d+\)$/, '')} (%/${totalInstallments})`,
+      existingTransaction.category,
+      existingTransaction.amount,
     ]);
   }
 
@@ -162,14 +176,25 @@ export class TransactionRepository {
        WHERE user_id = ?
          AND type = 'expense'
          AND is_fixed = 0
-         AND installments = ?
-         AND category = ?
-         AND description LIKE ?`,
+          AND installments = ?
+          AND (
+            (? IS NOT NULL AND installment_group_id = ?)
+            OR (
+              ? IS NULL
+              AND category = ?
+              AND amount = ?
+              AND description LIKE ?
+            )
+          )`,
       [
-        userId,
-        transaction.installments ?? 1,
-        transaction.category,
-        `${baseDescription} (%/${transaction.installments ?? 1})`,
+         userId,
+         transaction.installments ?? 1,
+         transaction.installment_group_id ?? null,
+         transaction.installment_group_id ?? null,
+         transaction.installment_group_id ?? null,
+         transaction.category,
+         transaction.amount,
+         `${baseDescription} (%/${transaction.installments ?? 1})`,
       ],
     );
   }
