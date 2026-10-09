@@ -224,11 +224,32 @@ export function Dashboard() {
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!window.confirm("Tem certeza que deseja apagar esta transação? Receitas fixas também removem os próximos meses.")) return;
+  async function handleDelete(transaction: Transaction) {
+    if (!transaction.id) return;
+
+    const isInstallmentExpense =
+      transaction.type === "expense" &&
+      !transaction.is_fixed &&
+      (transaction.installments || 1) > 1;
+    let scope = "";
+
+    if (isInstallmentExpense) {
+      const deleteSeries = window.confirm(
+        "Esta despesa possui parcelas. Clique em OK para apagar todas as parcelas ou em Cancelar para escolher apagar somente esta parcela.",
+      );
+      if (deleteSeries) {
+        scope = "?scope=series";
+      } else if (!window.confirm("Apagar somente a parcela deste mês?")) {
+        return;
+      }
+    } else if (
+      !window.confirm("Tem certeza que deseja apagar esta transação? Receitas fixas também removem os próximos meses.")
+    ) {
+      return;
+    }
 
     try {
-      const response = await api.delete(`/transactions/${id}`);
+      const response = await api.delete(`/transactions/${transaction.id}${scope}`);
       await Promise.all([fetchTransactions(), refreshFinancialData()]);
       toast.success(response.data.message || "Transação apagada com sucesso!");
     } catch (error) {

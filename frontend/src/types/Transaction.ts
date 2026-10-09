@@ -8,4 +8,5 @@ export interface Transaction {
   date: string;
   is_fixed?: boolean;
   installments?: number;
+  installment_number?: number;
 }

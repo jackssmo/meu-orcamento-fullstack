@@ -4,7 +4,7 @@ import type { Transaction } from "../types/Transaction";
 interface TransactionTableProps {
   transactions: Transaction[];
   onEdit: (transaction: Transaction) => void;
-  onDelete: (id: number) => void;
+  onDelete: (transaction: Transaction) => void;
   onOpenModal: () => void;
   search: string;
   onSearchChange: (value: string) => void;
@@ -93,7 +93,7 @@ export function TransactionTable({
                       ✏️
                     </button>
                     <button
-                      onClick={() => onDelete(t.id!)}
+                      onClick={() => onDelete(t)}
                       className="text-red-400 hover:text-red-600 transition"
                       title="Excluir"
                     >

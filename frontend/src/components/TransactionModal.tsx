@@ -106,7 +106,9 @@ export function TransactionModal({
           {/* Valor e Data */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Valor (R$)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {type === "expense" && !editingId ? "Valor da parcela (R$)" : "Valor (R$)"}
+              </label>
               <input
                 type="text"
                 required
@@ -176,7 +178,7 @@ export function TransactionModal({
           {!editingId && type === "expense" && (
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Número de Parcelas (1 = à vista)
+                Número de parcelas (o valor acima será aplicado a cada parcela)
               </label>
               <input
                 type="number"
