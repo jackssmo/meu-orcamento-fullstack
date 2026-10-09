@@ -6,6 +6,10 @@ interface TransactionTableProps {
   onEdit: (transaction: Transaction) => void;
   onDelete: (id: number) => void;
   onOpenModal: () => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+  onlyType: "all" | "income" | "expense";
+  onTypeChange: (value: "all" | "income" | "expense") => void;
 }
 
 export function TransactionTable({
@@ -13,17 +17,40 @@ export function TransactionTable({
   onEdit,
   onDelete,
   onOpenModal,
+  search,
+  onSearchChange,
+  onlyType,
+  onTypeChange,
 }: TransactionTableProps) {
   return (
-    <section className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <section className="surface overflow-hidden">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
         <h2 className="text-lg font-semibold text-gray-900">Transações</h2>
         <button
           onClick={onOpenModal}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition"
+          className="bg-[#2454a6] hover:bg-[#1c4386] text-white px-4 py-2 rounded-lg text-sm font-semibold transition"
         >
           + Nova Transação
         </button>
+      </div>
+      <div className="border-b border-gray-200 bg-[#fafbfd] p-4">
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <input
+            value={search}
+            onChange={(event) => onSearchChange(event.target.value)}
+            placeholder="Buscar por descrição ou categoria..."
+            className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#2454a6] focus:ring-2 focus:ring-[#c8d9f5]"
+          />
+          <select
+            value={onlyType}
+            onChange={(event) => onTypeChange(event.target.value as "all" | "income" | "expense")}
+            className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#2454a6] focus:ring-2 focus:ring-[#c8d9f5]"
+          >
+            <option value="all">Todos os tipos</option>
+            <option value="income">Somente receitas</option>
+            <option value="expense">Somente despesas</option>
+          </select>
+        </div>
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-left border-collapse">

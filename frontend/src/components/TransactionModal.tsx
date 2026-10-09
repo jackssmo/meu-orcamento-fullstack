@@ -21,6 +21,7 @@ interface TransactionModalProps {
   setIsFixed: (value: boolean) => void;
   installments: string;
   setInstallments: (value: string) => void;
+  categories?: string[];
 }
 
 export function TransactionModal({
@@ -43,6 +44,7 @@ export function TransactionModal({
   setIsFixed,
   installments,
   setInstallments,
+  categories = [],
 }: TransactionModalProps) {
   if (!isOpen) return null;
 
@@ -141,7 +143,16 @@ export function TransactionModal({
               <option value="transporte">Transporte</option>
               <option value="salario">Salário</option>
               <option value="lazer">Lazer</option>
+              <option value="saude">Saúde</option>
+              <option value="educacao">Educação</option>
+              <option value="assinaturas">Assinaturas</option>
+              <option value="compras">Compras</option>
+              <option value="viagens">Viagens</option>
+              <option value="impostos">Impostos e taxas</option>
+              <option value="investimentos">Investimentos</option>
+              <option value="dividas">Dívidas</option>
               <option value="outros">Outros</option>
+              {categories.filter((item) => !["alimentacao", "moradia", "transporte", "salario", "lazer", "saude", "educacao", "assinaturas", "compras", "viagens", "impostos", "investimentos", "dividas", "outros"].includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
 
@@ -182,7 +193,7 @@ export function TransactionModal({
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium transition mt-4 disabled:opacity-70"
+            className="w-full bg-[#2454a6] hover:bg-[#1c4386] text-white py-3 rounded-lg font-semibold transition mt-4 disabled:opacity-70"
           >
             {isSubmitting ? "Salvando..." : editingId ? "Atualizar Transação" : "Salvar Transação"}
           </button>
