@@ -12,6 +12,6 @@ export interface Transaction {
   installment_group_id?: string | null;
   recurrence_end_date?: string | Date | null;
   account_id?: number | null | undefined;
-  card?: 'nubank' | 'inter' | 'mercado_pago' | null;
+  card?: string | null;
   created_at?: Date;
 }

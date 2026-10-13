@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import { IUserRepository } from '../repositories/IUserRepository';
 import { User } from '../models/User';
+import db from '../config/db';
 
 export class UserService {
   private userRepository: IUserRepository;
@@ -29,7 +30,12 @@ export class UserService {
       password_hash
     };
 
-    return await this.userRepository.save(newUser);
+    const savedUser = await this.userRepository.save(newUser);
+    await db.query(
+      'INSERT INTO cards (user_id, name) VALUES (?, ?), (?, ?), (?, ?)',
+      [savedUser.id, 'Nubank', savedUser.id, 'Inter', savedUser.id, 'Mercado Pago'],
+    );
+    return savedUser;
   }
 
   async authenticate(email: string, password_plain: string): Promise<User> {

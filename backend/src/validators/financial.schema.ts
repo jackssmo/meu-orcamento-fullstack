@@ -4,6 +4,9 @@ const money = z.number().finite().min(0);
 const name = z.string().trim().min(2).max(120);
 
 export const financialSchemas = {
+  cards: z.object({
+    name: name,
+  }),
   accounts: z.object({
     name,
     type: z.enum(['checking', 'cash', 'savings', 'credit_card']),

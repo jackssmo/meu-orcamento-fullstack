@@ -13,6 +13,10 @@ export function Profile() {
   const [newPassword, setNewPassword] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [cards, setCards] = useState<{ id: number; name: string }[]>([]);
+  const [newCard, setNewCard] = useState("");
+  const [editingCardId, setEditingCardId] = useState<number | null>(null);
+  const [editingCardName, setEditingCardName] = useState("");
 
   useEffect(() => {
     api.get("/auth/profile")
@@ -22,6 +26,9 @@ export function Profile() {
       })
       .catch(() => toast.error("Não foi possível carregar seus dados."))
       .finally(() => setIsLoading(false));
+    api.get("/financial/cards")
+      .then((response) => setCards(response.data))
+      .catch(() => toast.error("Não foi possível carregar seus cartões."));
   }, []);
 
   async function handleSubmit(event: FormEvent) {
@@ -44,6 +51,54 @@ export function Profile() {
       toast.error(message || "Não foi possível atualizar seus dados.");
     } finally {
       setIsSaving(false);
+    }
+
+  }
+
+  async function addCard(event: FormEvent) {
+    event.preventDefault();
+    if (!newCard.trim()) return;
+    try {
+      const response = await api.post("/financial/cards", { name: newCard.trim() });
+      setCards((current) => [response.data, ...current]);
+      setNewCard("");
+      toast.success("Cartão cadastrado.");
+    } catch (error) {
+      const message = isAxiosError(error) ? error.response?.data?.error : undefined;
+      toast.error(message || "Não foi possível cadastrar o cartão.");
+    }
+  }
+
+  async function removeCard(id: number) {
+    if (!window.confirm("Excluir este cartão da sua lista? As despesas antigas serão mantidas.")) return;
+    try {
+      await api.delete(`/financial/cards/${id}`);
+      setCards((current) => current.filter((card) => card.id !== id));
+      toast.success("Cartão removido.");
+    } catch {
+      toast.error("Não foi possível remover o cartão.");
+    }
+  }
+
+  function startEditingCard(card: { id: number; name: string }) {
+    setEditingCardId(card.id);
+    setEditingCardName(card.name);
+  }
+
+  async function saveCard(event: FormEvent, id: number) {
+    event.preventDefault();
+    const normalizedName = editingCardName.trim();
+    if (normalizedName.length < 2) return;
+
+    try {
+      const response = await api.patch(`/financial/cards/${id}`, { name: normalizedName });
+      setCards((current) => current.map((card) => card.id === id ? response.data : card));
+      setEditingCardId(null);
+      setEditingCardName("");
+      toast.success("Cartão atualizado.");
+    } catch (error) {
+      const message = isAxiosError(error) ? error.response?.data?.error : undefined;
+      toast.error(message || "Não foi possível atualizar o cartão.");
     }
   }
 
@@ -92,6 +147,51 @@ export function Profile() {
               </div>
             </form>
           )}
+        </section>
+        <section className="surface mt-6 max-w-2xl p-6 sm:p-8">
+          <h2 className="text-lg font-semibold text-[#202b3c]">Meus cartões</h2>
+          <p className="mt-1 text-sm text-[#7b8798]">Cadastre os cartões que aparecem nas suas despesas.</p>
+          <form onSubmit={addCard} className="mt-5 flex flex-col gap-3 sm:flex-row">
+            <input
+              required
+              minLength={2}
+              maxLength={120}
+              value={newCard}
+              onChange={(event) => setNewCard(event.target.value)}
+              placeholder="Ex.: Nubank Visa"
+              className="min-w-0 flex-1 rounded-lg border border-[#dfe3eb] px-4 py-3 outline-none focus:border-[#2454a6] focus:ring-2 focus:ring-[#c8d9f5]"
+            />
+            <button type="submit" className="rounded-lg bg-[#2454a6] px-5 py-3 text-sm font-semibold text-white hover:bg-[#1c4386]">Adicionar cartão</button>
+          </form>
+          <div className="mt-5 space-y-2">
+            {cards.map((card) => (
+              <div key={card.id} className="flex items-center justify-between rounded-lg border border-[#e4e9f0] px-4 py-3">
+                {editingCardId === card.id ? (
+                  <form onSubmit={(event) => void saveCard(event, card.id)} className="flex w-full flex-col gap-2 sm:flex-row">
+                    <input
+                      required
+                      minLength={2}
+                      maxLength={120}
+                      value={editingCardName}
+                      onChange={(event) => setEditingCardName(event.target.value)}
+                      className="min-w-0 flex-1 rounded-lg border border-[#dfe3eb] px-3 py-2 outline-none focus:border-[#2454a6] focus:ring-2 focus:ring-[#c8d9f5]"
+                      autoFocus
+                    />
+                    <button type="submit" className="text-sm font-semibold text-[#2454a6] hover:text-[#1c4386]">Salvar</button>
+                    <button type="button" onClick={() => setEditingCardId(null)} className="text-sm font-semibold text-slate-500 hover:text-slate-700">Cancelar</button>
+                  </form>
+                ) : (
+                  <>
+                    <span className="font-medium text-[#243238]">{card.name}</span>
+                    <div className="flex gap-3">
+                      <button type="button" onClick={() => startEditingCard(card)} className="text-sm font-semibold text-[#2454a6] hover:text-[#1c4386]">Editar</button>
+                      <button type="button" onClick={() => void removeCard(card.id)} className="text-sm font-semibold text-red-600 hover:text-red-800">Excluir</button>
+                    </div>
+                  </>
+                )}
+              </div>
+            ))}
+          </div>
         </section>
       </main>
     </div>

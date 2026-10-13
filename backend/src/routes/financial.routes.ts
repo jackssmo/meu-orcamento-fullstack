@@ -4,7 +4,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth.middleware';
 
 const router = Router();
 const controller = new FinancialController();
-const resources = ['accounts', 'categories', 'budgets', 'goals'] as const;
+const resources = ['cards', 'accounts', 'categories', 'budgets', 'goals'] as const;
 
 router.use(authMiddleware);
 

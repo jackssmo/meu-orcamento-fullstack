@@ -3,6 +3,14 @@ import { Transaction } from '../models/Transaction';
 import { ResultSetHeader, RowDataPacket } from 'mysql2';
 
 export class TransactionRepository {
+  async cardBelongsToUser(userId: number, cardName: string): Promise<boolean> {
+    const [rows] = await db.execute<RowDataPacket[]>(
+      'SELECT id FROM cards WHERE user_id = ? AND name = ? LIMIT 1',
+      [userId, cardName],
+    );
+    return rows.length > 0;
+  }
+
   private toValues(transaction: Transaction): (number | string | boolean | null | Date)[] {
     return [
       transaction.user_id, transaction.description, transaction.amount, transaction.type,

@@ -4,9 +4,14 @@ import { AuthRequest } from '../middleware/auth.middleware';
 import { RowDataPacket, ResultSetHeader } from 'mysql2';
 import { financialSchemas, FinancialResource } from '../validators/financial.schema';
 
-type Resource = 'accounts' | 'categories' | 'budgets' | 'goals';
+type Resource = 'cards' | 'accounts' | 'categories' | 'budgets' | 'goals';
 
 const resourceConfig = {
+  cards: {
+    table: 'cards',
+    columns: ['name'],
+    required: ['name'],
+  },
   accounts: {
     table: 'accounts',
     columns: ['name', 'type', 'initial_balance', 'credit_limit', 'closing_day', 'due_day'],
@@ -87,12 +92,33 @@ export class FinancialController {
     const body = parseResourceBody(resource, req.body, true);
     const assignments = config.columns.filter((column) => body[column] !== undefined);
     if (assignments.length === 0) return res.status(400).json({ error: 'Nenhum campo para atualizar.' });
-    const values = assignments.map((column) => body[column]);
+    let previousCardName: string | null = null;
+    if (resource === 'cards' && assignments.includes('name')) {
+      const [cardRows] = await db.execute<RowDataPacket[]>(
+        'SELECT name FROM cards WHERE id = ? AND user_id = ?',
+        [id, userId],
+      );
+      previousCardName = cardRows[0]?.name ?? null;
+    }
+    const values = assignments.map((column) => body[column]) as (string | number | null)[];
     const [result] = await db.query<ResultSetHeader>(
       `UPDATE ${config.table} SET ${assignments.map((column) => `${column} = ?`).join(', ')} WHERE id = ? AND user_id = ?`,
       [...values, id, userId],
     );
     if (result.affectedRows === 0) return res.status(404).json({ error: 'Registro não encontrado.' });
+    if (resource === 'cards' && previousCardName !== null && body.name !== previousCardName) {
+      await db.execute(
+        'UPDATE transactions SET card = ? WHERE user_id = ? AND card = ?',
+        [body.name as string, userId, previousCardName],
+      );
+    }
+    if (resource === 'cards') {
+      const [rows] = await db.execute<RowDataPacket[]>(
+        'SELECT * FROM cards WHERE id = ? AND user_id = ?',
+        [id, userId],
+      );
+      return res.status(200).json(rows[0]);
+    }
     return res.status(204).send();
   }
 

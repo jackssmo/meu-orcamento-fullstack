@@ -9,5 +9,5 @@ export interface Transaction {
   is_fixed?: boolean;
   installments?: number;
   installment_number?: number;
-  card?: "nubank" | "inter" | "mercado_pago" | null;
+  card?: string | null;
 }

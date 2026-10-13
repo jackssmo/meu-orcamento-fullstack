@@ -76,6 +76,7 @@ export function Dashboard() {
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState("");
   const [card, setCard] = useState("");
+  const [cards, setCards] = useState<string[]>([]);
   const [date, setDate] = useState(getTodayInputValue);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -149,6 +150,9 @@ export function Dashboard() {
     api.get("/financial/categories")
       .then((response) => setCustomCategories(response.data.map((item: { name: string }) => item.name)))
       .catch(() => setCustomCategories([]));
+    api.get("/financial/cards")
+      .then((response) => setCards(response.data.map((item: { name: string }) => item.name)))
+      .catch(() => setCards([]));
   }, [fetchTransactions, navigate, refreshFinancialData]);
 
   function closeModal() {
@@ -568,6 +572,7 @@ export function Dashboard() {
         setCategory={setCategory}
         card={card}
         setCard={setCard}
+        cards={cards}
         isFixed={isFixed}
         setIsFixed={setIsFixed}
         installments={installments}

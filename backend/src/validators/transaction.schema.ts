@@ -9,7 +9,7 @@ export const transactionSchema = z.object({
   is_fixed: z.boolean().optional().default(false),
   installments: z.number().int().min(1).max(60).optional().default(1),
   account_id: z.number().int().positive().nullable().optional(),
-  card: z.enum(['nubank', 'inter', 'mercado_pago']).nullable().optional(),
+  card: z.string().trim().min(2).max(120).nullable().optional(),
 });
 
 export type TransactionInput = z.infer<typeof transactionSchema>;

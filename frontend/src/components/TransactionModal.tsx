@@ -24,6 +24,7 @@ interface TransactionModalProps {
   setCategory: (cat: string) => void;
   card: string;
   setCard: (card: string) => void;
+  cards: string[];
   // Novos campos que criamos no backend:
   isFixed: boolean;
   setIsFixed: (value: boolean) => void;
@@ -50,6 +51,7 @@ export function TransactionModal({
   setCategory,
   card,
   setCard,
+  cards,
   isFixed,
   setIsFixed,
   installments,
@@ -177,9 +179,7 @@ export function TransactionModal({
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
               >
                 <option value="">Selecione o cartão...</option>
-                <option value="nubank">Nubank</option>
-                <option value="inter">Inter</option>
-                <option value="mercado_pago">Mercado Pago</option>
+                {cards.map((item) => <option key={item} value={item}>{item}</option>)}
               </select>
             </div>
           )}

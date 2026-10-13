@@ -11,6 +11,9 @@ export class TransactionService {
         const parsed = transactionSchema.safeParse(data);
         if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Dados da transação inválidos.');
         const { description, amount, type, category, date, installments, is_fixed, account_id, card } = parsed.data;
+        if (card && !(await this.transactionRepository.cardBelongsToUser(userId, card))) {
+            throw new Error('O cartão selecionado não pertence à sua conta.');
+        }
         if (is_fixed && type !== 'income') {
             throw new Error("A recorrência fixa está disponível apenas para receitas.");
         }
@@ -70,6 +73,9 @@ export class TransactionService {
 
         const parsed = transactionSchema.safeParse(data);
         if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Dados da transação inválidos.');
+        if (parsed.data.card && !(await this.transactionRepository.cardBelongsToUser(userId, parsed.data.card))) {
+            throw new Error('O cartão selecionado não pertence à sua conta.');
+        }
 
         const updatedTransaction: Transaction = {
             id,
