@@ -10,14 +10,15 @@ export class TransactionRepository {
       transaction.installments ?? 1, transaction.installment_number ?? 1,
       transaction.recurrence_end_date ?? null, transaction.account_id ?? null,
       transaction.installment_group_id ?? null,
+      transaction.card ?? null,
     ];
   }
   
   async create(transaction: Transaction): Promise<Transaction> {
     const query = `
       INSERT INTO transactions
-        (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id, installment_group_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id, installment_group_id, card)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     
     const values = this.toValues(transaction);
@@ -36,8 +37,8 @@ export class TransactionRepository {
       await connection.beginTransaction();
       const query = `
         INSERT INTO transactions
-          (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id, installment_group_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          (user_id, description, amount, type, category, date, is_fixed, installments, installment_number, recurrence_end_date, account_id, installment_group_id, card)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `;
       const created: Transaction[] = [];
       for (const transaction of transactions) {
@@ -65,8 +66,13 @@ export class TransactionRepository {
       values.push(options.month, options.year);
     }
     if (options.search) {
-      filters.push('(description LIKE ? OR category LIKE ?)');
-      values.push(`%${options.search}%`, `%${options.search}%`);
+      filters.push("(description LIKE ? OR category LIKE ? OR card LIKE ? OR REPLACE(card, '_', ' ') LIKE ?)");
+      values.push(
+        `%${options.search}%`,
+        `%${options.search}%`,
+        `%${options.search}%`,
+        `%${options.search}%`,
+      );
     }
     if (options.type) {
       filters.push('type = ?');
@@ -95,7 +101,7 @@ export class TransactionRepository {
   async update(id: number, transaction: Transaction): Promise<void> {
     const query = `
       UPDATE transactions 
-      SET description = ?, amount = ?, type = ?, category = ?, date = ?
+      SET description = ?, amount = ?, type = ?, category = ?, date = ?, card = ?
       WHERE id = ? AND user_id = ?
     `;
     const values = [
@@ -104,6 +110,7 @@ export class TransactionRepository {
       transaction.type,
       transaction.category,
       transaction.date,
+      transaction.card ?? null,
       id,
       transaction.user_id
     ];
@@ -128,7 +135,8 @@ export class TransactionRepository {
           amount = ?,
           type = ?,
           category = ?,
-          date = IF(id = ?, ?, date)
+          card = ?,
+          date = DATE(TIMESTAMPADD(MONTH, installment_number - ?, ?))
       WHERE user_id = ?
         AND type = 'expense'
         AND is_fixed = 0
@@ -150,7 +158,8 @@ export class TransactionRepository {
       transaction.amount,
       transaction.type,
       transaction.category,
-      existingTransaction.id,
+      transaction.card ?? null,
+      installmentNumber,
       transaction.date,
       transaction.user_id,
       totalInstallments,

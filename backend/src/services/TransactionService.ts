@@ -10,7 +10,7 @@ export class TransactionService {
     async createTransaction(userId: number, data: Omit<Transaction, 'id' | 'user_id' | 'created_at'>): Promise<Transaction> {
         const parsed = transactionSchema.safeParse(data);
         if (!parsed.success) throw new Error(parsed.error.issues[0]?.message ?? 'Dados da transação inválidos.');
-        const { description, amount, type, category, date, installments, is_fixed, account_id } = parsed.data;
+        const { description, amount, type, category, date, installments, is_fixed, account_id, card } = parsed.data;
         if (is_fixed && type !== 'income') {
             throw new Error("A recorrência fixa está disponível apenas para receitas.");
         }
@@ -44,6 +44,7 @@ export class TransactionService {
                 installment_number: occurrence + 1,
                 installment_group_id: installmentGroupId,
                 account_id,
+                card: type === 'expense' ? card ?? null : null,
             });
         }
         const created = await this.transactionRepository.createMany(newTransactions);
@@ -74,6 +75,7 @@ export class TransactionService {
             id,
             user_id: userId,
             ...parsed.data,
+            card: parsed.data.card ?? null,
             date: parsed.data.date.toISOString().substring(0, 10),
         };
 

@@ -1,5 +1,11 @@
 import type { ChangeEvent, FormEvent } from "react";
 
+function capitalizeWords(value: string): string {
+  return value.replace(/(^|\s)(\S)/gu, (_, separator: string, character: string) =>
+    `${separator}${character.toLocaleUpperCase("pt-BR")}`,
+  );
+}
+
 interface TransactionModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -16,6 +22,8 @@ interface TransactionModalProps {
   setDate: (date: string) => void;
   category: string;
   setCategory: (cat: string) => void;
+  card: string;
+  setCard: (card: string) => void;
   // Novos campos que criamos no backend:
   isFixed: boolean;
   setIsFixed: (value: boolean) => void;
@@ -40,6 +48,8 @@ export function TransactionModal({
   setDate,
   category,
   setCategory,
+  card,
+  setCard,
   isFixed,
   setIsFixed,
   installments,
@@ -97,7 +107,7 @@ export function TransactionModal({
               type="text"
               required
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
+              onChange={(e) => setDescription(capitalizeWords(e.target.value))}
               placeholder="Ex: Supermercado, Salário..."
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
             />
@@ -157,6 +167,22 @@ export function TransactionModal({
               {categories.filter((item) => !["alimentacao", "moradia", "transporte", "salario", "lazer", "saude", "educacao", "assinaturas", "compras", "viagens", "impostos", "investimentos", "dividas", "outros"].includes(item)).map((item) => <option key={item} value={item}>{item}</option>)}
             </select>
           </div>
+
+          {type === "expense" && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Cartão</label>
+              <select
+                value={card}
+                onChange={(e) => setCard(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500"
+              >
+                <option value="">Selecione o cartão...</option>
+                <option value="nubank">Nubank</option>
+                <option value="inter">Inter</option>
+                <option value="mercado_pago">Mercado Pago</option>
+              </select>
+            </div>
+          )}
 
           {/* CAMPO NOVO: Renda Fixa (Apenas para Receitas e se não estiver editando) */}
           {!editingId && type === "income" && (

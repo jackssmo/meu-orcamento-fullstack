@@ -38,7 +38,7 @@ export function TransactionTable({
           <input
             value={search}
             onChange={(event) => onSearchChange(event.target.value)}
-            placeholder="Buscar por descrição ou categoria..."
+            placeholder="Buscar por descrição, categoria ou cartão..."
             className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#2454a6] focus:ring-2 focus:ring-[#c8d9f5]"
           />
           <select
@@ -74,7 +74,9 @@ export function TransactionTable({
                 <tr key={t.id} className="hover:bg-gray-50 transition">
                   <td className="p-4 font-medium text-gray-900">
                     {t.description}
-                    <span className="block text-xs text-gray-500 capitalize">{t.category}</span>
+                    <span className="block text-xs text-gray-500 capitalize">
+                      {t.category}{t.card ? ` · ${t.card === "mercado_pago" ? "Mercado Pago" : t.card}` : ""}
+                    </span>
                   </td>
                   <td className="p-4 text-gray-500">{formatDate(t.date)}</td>
                   <td

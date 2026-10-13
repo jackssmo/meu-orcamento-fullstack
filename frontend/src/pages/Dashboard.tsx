@@ -75,6 +75,7 @@ export function Dashboard() {
   const [amount, setAmount] = useState("");
   const [type, setType] = useState<"income" | "expense">("expense");
   const [category, setCategory] = useState("");
+  const [card, setCard] = useState("");
   const [date, setDate] = useState(getTodayInputValue);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -155,6 +156,7 @@ export function Dashboard() {
     setAmount("");
     setType("expense");
     setCategory("");
+    setCard("");
     setDate(getTodayInputValue());
     setIsFixed(false);
     setInstallments("1");
@@ -173,6 +175,7 @@ export function Dashboard() {
     setAmount(formattedAmount);
     setType(transaction.type);
     setCategory(transaction.category);
+    setCard(transaction.card || "");
     setDate(String(transaction.date).substring(0, 10));
     setEditingId(transaction.id || null);
     setEditingTransaction(transaction);
@@ -218,6 +221,7 @@ export function Dashboard() {
         amount: numericAmount,
         type,
         category,
+        card: type === "expense" && card ? card : null,
         date,
         is_fixed: isFixed,
         installments: Number(installments),
@@ -225,7 +229,7 @@ export function Dashboard() {
 
       if (editingId) {
         const scope = updateSeries ? "?scope=series" : "";
-        await api.put(`/transactions/${editingId}${scope}`, { description, amount: numericAmount, type, category, date });
+        await api.put(`/transactions/${editingId}${scope}`, { description, amount: numericAmount, type, category, date, card: type === "expense" && card ? card : null });
         toast.success("Transação atualizada com sucesso!");
       } else {
         await api.post("/transactions", data);
@@ -562,6 +566,8 @@ export function Dashboard() {
         setDate={setDate}
         category={category}
         setCategory={setCategory}
+        card={card}
+        setCard={setCard}
         isFixed={isFixed}
         setIsFixed={setIsFixed}
         installments={installments}
