@@ -1,10 +1,11 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 export function ProtectedRoute() {
   const location = useLocation();
-  const token = localStorage.getItem("fintrack_token");
+  const { signed } = useAuth();
 
-  if (!token) {
+  if (!signed) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />;
   }
 

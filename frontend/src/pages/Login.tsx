@@ -1,24 +1,35 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { api } from "../services/api";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 export function Login() {
   const navigate = useNavigate();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showServerStartingMessage, setShowServerStartingMessage] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading) return;
+
+    const timer = window.setTimeout(() => {
+      setShowServerStartingMessage(true);
+    }, 3000);
+
+    return () => window.clearTimeout(timer);
+  }, [isLoading]);
 
   async function handleLogin(e: FormEvent) {
     e.preventDefault();
     setIsLoading(true);
+    setShowServerStartingMessage(false);
 
     try {
 
-      const response = await api.post("/auth/login", { email, password });
-      
-      localStorage.setItem("fintrack_token", response.data.token);
+      await signIn(email, password);
       
       toast.success("Login realizado com sucesso!");
 
@@ -31,6 +42,7 @@ export function Login() {
       }
     } finally {
       setIsLoading(false);
+      setShowServerStartingMessage(false);
     }
   }
 
@@ -74,8 +86,25 @@ export function Login() {
               disabled={isLoading}
               className="w-full bg-[#2454a6] hover:bg-[#1c4386] text-white py-3 px-4 rounded-lg font-semibold transition duration-200 disabled:opacity-70"
             >
-              {isLoading ? "Entrando..." : "Entrar"}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white"
+                    aria-hidden="true"
+                  />
+                  <span>Entrando...</span>
+                </span>
+              ) : "Entrar"}
             </button>
+            {showServerStartingMessage && (
+              <p
+                className="text-center text-xs text-[#7b8798]"
+                role="status"
+                aria-live="polite"
+              >
+                O servidor está a inicializar, isto pode demorar alguns segundos...
+              </p>
+            )}
           </form>
           
           <p className="text-center text-[#7b8798] text-sm mt-6">

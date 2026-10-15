@@ -5,11 +5,13 @@ import { Register } from "./pages/Register";
 import { Dashboard } from "./pages/Dashboard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Profile } from "./pages/Profile";
+import { AuthProvider } from "./contexts/AuthContext";
 
 export function App() {
   return (
-    <BrowserRouter>
-      <Toaster position="bottom-right" />
+    <AuthProvider>
+      <BrowserRouter>
+        <Toaster position="bottom-right" />
       
       <Routes>
         <Route path="/" element={<Navigate to="/login" replace />} />
@@ -20,7 +22,8 @@ export function App() {
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Routes>
-    </BrowserRouter>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 

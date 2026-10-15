@@ -1,4 +1,5 @@
 import { NavLink, useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 
 interface HeaderProps {
   userName: string;
@@ -6,9 +7,10 @@ interface HeaderProps {
 
 export function Header({ userName }: HeaderProps) {
   const navigate = useNavigate();
+  const { signOut } = useAuth();
 
   function handleLogout() {
-    localStorage.removeItem("fintrack_token");
+    signOut();
     navigate("/login");
   }
 

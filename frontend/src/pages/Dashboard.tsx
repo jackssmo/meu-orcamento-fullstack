@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState, type FormEvent, type ChangeEvent } from "react";
-import { useNavigate } from "react-router-dom";
 import { api } from "../services/api";
 import { Header } from "../components/Header";
 import { SummaryCards } from "../components/SummaryCards";
@@ -9,6 +8,7 @@ import type { Transaction } from "../types/Transaction";
 import { formatCurrency } from "../utils/formatters";
 import toast from "react-hot-toast";
 import { isAxiosError } from "axios";
+import { useAuth } from "../contexts/AuthContext";
 
 function getTodayInputValue(): string {
   const today = new Date();
@@ -66,8 +66,8 @@ function getCategoryColor(category: string): string {
 }
 
 export function Dashboard() {
-  const navigate = useNavigate();
-  const [userName, setUserName] = useState("");
+  const { user } = useAuth();
+  const userName = user?.name || "Usuário";
   const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -131,16 +131,6 @@ export function Dashboard() {
   }, [selectedMonth, selectedYear]);
 
   useEffect(() => {
-    const token = localStorage.getItem("fintrack_token");
-    if (!token) {
-      navigate("/login");
-      return;
-    }
-
-    api.get("/auth/profile") // ou /profile dependendo de como configurou
-      .then((res) => setUserName(res.data.name || "Usuário"))
-      .catch(() => setUserName("Usuário"));
-
     void Promise.resolve().then(fetchTransactions);
     void Promise.resolve().then(refreshFinancialData).catch(() => {
       setSummary({ totalIncome: 0, totalExpense: 0, balance: 0, realizedBalance: 0 });
@@ -153,7 +143,7 @@ export function Dashboard() {
     api.get("/financial/cards")
       .then((response) => setCards(response.data.map((item: { name: string }) => item.name)))
       .catch(() => setCards([]));
-  }, [fetchTransactions, navigate, refreshFinancialData]);
+  }, [fetchTransactions, refreshFinancialData]);
 
   function closeModal() {
     setDescription("");
