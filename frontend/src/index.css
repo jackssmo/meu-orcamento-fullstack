@@ -11,7 +11,16 @@
 body { margin: 0; min-width: 320px; background: #f5f7fa; }
 button, input, select { font: inherit; }
 .app-layout { min-height: 100vh; background: #f5f7fa; }
-.app-sidebar { position: fixed; inset: 0 auto 0 0; width: 238px; padding: 30px 16px 22px; background: #152d52; color: #dbe5f4; display: flex; flex-direction: column; z-index: 10; }
+.app-sidebar { position: fixed; inset: 0 auto 0 0; width: 238px; padding: 30px 16px 22px; background: #152d52; color: #dbe5f4; display: flex; flex-direction: column; z-index: 10; transition: width .2s ease, padding .2s ease; }
+.sidebar-toggle { position: absolute; top: 18px; right: -13px; display: grid; place-items: center; width: 26px; height: 26px; border: 1px solid #d9e3f2; border-radius: 50%; background: #fff; color: #2454a6; cursor: pointer; font-size: 20px; line-height: 1; box-shadow: 0 2px 7px #152d5233; }
+.sidebar-toggle:hover { background: #edf3fc; }
+.app-sidebar.collapsed { width: 72px; padding-right: 10px; padding-left: 10px; }
+.app-sidebar.collapsed .brand-mark { justify-content: center; padding-right: 0; padding-left: 0; }
+.app-sidebar.collapsed .brand-mark > div:last-child, .app-sidebar.collapsed .nav-item b, .app-sidebar.collapsed .profile-details, .app-sidebar.collapsed .logout-button span { display: none; }
+.app-sidebar.collapsed .nav-item { justify-content: center; padding-right: 8px; padding-left: 8px; }
+.app-sidebar.collapsed .nav-item span { width: auto; }
+.app-sidebar.collapsed .profile-chip { justify-content: center; padding-right: 0; padding-left: 0; }
+.app-sidebar.collapsed .logout-button { text-align: center; }
 .brand-mark { display: flex; align-items: center; gap: 11px; padding: 0 10px 44px; }
 .brand-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 9px; color: #152d52; font-weight: 800; font-size: 14px; letter-spacing: -.06em; background: #fff; }
 .brand-mark strong, .brand-mark span, .profile-chip strong, .profile-chip span { display: block; }
@@ -30,6 +39,7 @@ button, input, select { font: inherit; }
 .logout-button { border: 0; color: #a9bddd; background: transparent; cursor: pointer; padding: 10px 8px; width: 100%; text-align: left; font-size: 13px; }
 .logout-button:hover { color: #fff; }
 .app-content { margin-left: 238px; padding: 42px clamp(20px, 4vw, 58px); max-width: 1500px; }
+.app-layout:has(.app-sidebar.collapsed) .app-content { margin-left: 72px; }
 .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 30px; }
 .page-heading h1 { margin: 0; color: #202b3c; font-size: clamp(24px, 3vw, 32px); letter-spacing: -.05em; }
 .page-heading p { margin: 8px 0 0; color: #7b8798; font-size: 14px; }
@@ -56,12 +66,15 @@ button, input, select { font: inherit; }
 .month-picker-button.active { border-color: #2454a6; background: #2454a6; color: #fff; box-shadow: 0 3px 8px #2454a633; }
 .transaction-modal { max-height: calc(100dvh - 2rem); overflow-y: auto; }
 @media (max-width: 760px) {
-  .app-sidebar { position: static; width: auto; min-height: auto; padding: 16px; }
+  .app-sidebar, .app-sidebar.collapsed { position: static; width: auto; min-height: auto; padding: 16px; }
+  .app-sidebar.collapsed .brand-mark > div:last-child, .app-sidebar.collapsed .nav-item b { display: block; }
+  .app-sidebar.collapsed .nav-item { justify-content: center; padding-right: 13px; padding-left: 13px; }
+  .app-sidebar.collapsed .profile-details, .app-sidebar.collapsed .logout-button span { display: none; }
   .brand-mark { padding-bottom: 16px; }
   .sidebar-nav { display: flex; overflow-x: auto; }
   .nav-item { white-space: nowrap; }
   .sidebar-bottom { display: none; }
-  .app-content { margin-left: 0; padding: 25px 16px; }
+  .app-content, .app-layout:has(.app-sidebar.collapsed) .app-content { margin-left: 0; padding: 25px 16px; }
   .page-heading { display: block; margin-bottom: 22px; }
   .page-heading h1 { font-size: 27px; }
   .page-heading > div:last-child { margin-top: 16px; }

@@ -171,6 +171,15 @@ export class FinancialController {
        GROUP BY DATE(date), type ORDER BY date`,
       [userId, month, year],
     );
-    return res.status(200).json({ byCategory: categoryRows, daily: dailyRows });
+    const [cardRows] = await db.execute<RowDataPacket[]>(
+      `SELECT COALESCE(NULLIF(TRIM(card), ''), 'Sem cartão') AS card, SUM(amount) AS total
+       FROM transactions
+       WHERE user_id = ? AND MONTH(date) = ? AND YEAR(date) = ? AND type = 'expense'
+         AND NULLIF(TRIM(card), '') IS NOT NULL
+       GROUP BY COALESCE(NULLIF(TRIM(card), ''), 'Sem cartão')
+       ORDER BY total DESC`,
+      [userId, month, year],
+    );
+    return res.status(200).json({ byCategory: categoryRows, byCard: cardRows, daily: dailyRows });
   }
 }

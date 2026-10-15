@@ -65,6 +65,15 @@ function getCategoryColor(category: string): string {
   return categoryColors[hash % categoryColors.length];
 }
 
+function getCardColor(card: string): string {
+  const colors = ["#2454a6", "#4f82d1", "#73b49a", "#e0ae4f", "#de6b67", "#8c72b2", "#5aa6ae"];
+  let hash = 0;
+  for (let index = 0; index < card.length; index += 1) {
+    hash = (hash * 31 + card.charCodeAt(index)) >>> 0;
+  }
+  return colors[hash % colors.length];
+}
+
 export function Dashboard() {
   const { user } = useAuth();
   const userName = user?.name || "Usuário";
@@ -97,6 +106,7 @@ export function Dashboard() {
   const [totalPages, setTotalPages] = useState(1);
   const [summary, setSummary] = useState({ totalIncome: 0, totalExpense: 0, balance: 0, realizedBalance: 0 });
   const [categoryTotals, setCategoryTotals] = useState<Record<string, number>>({});
+  const [cardTotals, setCardTotals] = useState<Record<string, number>>({});
 
   const fetchTransactions = useCallback(async () => {
     try {
@@ -128,7 +138,20 @@ export function Dashboard() {
           return result;
         }, {}),
     );
+    setCardTotals(
+      (categoryResponse.data.byCard || []).reduce(
+        (result: Record<string, number>, item: { card: string; total: number }) => {
+          result[item.card] = Number(item.total);
+          return result;
+        },
+        {},
+      ),
+    );
   }, [selectedMonth, selectedYear]);
+
+  const cardEntries = Object.entries(cardTotals);
+  const cardTotal = cardEntries.reduce((total, [, value]) => total + value, 0);
+  const maxCardTotal = Math.max(...cardEntries.map(([, value]) => value), 1);
 
   useEffect(() => {
     void Promise.resolve().then(fetchTransactions);
@@ -136,6 +159,7 @@ export function Dashboard() {
       setSummary({ totalIncome: 0, totalExpense: 0, balance: 0, realizedBalance: 0 });
       setMonthlyHistory([]);
       setCategoryTotals({});
+      setCardTotals({});
     });
     api.get("/financial/categories")
       .then((response) => setCustomCategories(response.data.map((item: { name: string }) => item.name)))
@@ -382,6 +406,7 @@ export function Dashboard() {
             )}
           </div>
 
+          <div className="space-y-8">
           <section className="surface p-6 h-fit">
             <div className="section-title">
               <h2>Gastos por categoria</h2>
@@ -428,6 +453,48 @@ export function Dashboard() {
               </div>
             )}
           </section>
+
+          <section className="surface p-6 h-fit">
+            <div className="section-title">
+              <h2>Despesas por cartão</h2>
+              <span>{formatCurrency(cardTotal)}</span>
+            </div>
+            {cardEntries.length === 0 ? (
+              <p className="text-center text-sm text-gray-500">Sem despesas neste mês</p>
+            ) : (
+              <div className="space-y-4">
+                {cardEntries.map(([cardName, value]) => {
+                  const percentage = cardTotal > 0 ? Math.round((value / cardTotal) * 100) : 0;
+                  return (
+                    <div key={cardName}>
+                      <div className="mb-1 flex justify-between gap-3 text-sm">
+                        <span className="flex min-w-0 items-center gap-2 font-medium text-gray-700">
+                          <span
+                            className="h-2.5 w-2.5 shrink-0 rounded-full"
+                            style={{ backgroundColor: getCardColor(cardName) }}
+                          />
+                          <span className="truncate">{cardName}</span>
+                        </span>
+                        <span className="shrink-0 text-gray-500">
+                          {formatCurrency(value)} <span className="text-xs">({percentage}%)</span>
+                        </span>
+                      </div>
+                      <div className="h-2.5 w-full rounded-full bg-gray-100">
+                        <div
+                          className="h-2.5 rounded-full"
+                          style={{
+                            width: `${Math.max(3, (value / maxCardTotal) * 100)}%`,
+                            backgroundColor: getCardColor(cardName),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+          </div>
         </div>
       </main>
 
